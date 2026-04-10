@@ -649,6 +649,19 @@ app.get("/api/bis/:spec", (req, res) => {
   }
 });
 
+// ── AI Rate Limiting ──
+const aiUsage = {}; // { userKey: { date: 'YYYY-MM-DD', count: 0 } }
+
+function checkAIRateLimit(userKey, isLocal) {
+  if (isLocal) return true; // localhost = unlimited
+  const today = new Date().toISOString().slice(0, 10);
+  if (!aiUsage[userKey]) aiUsage[userKey] = { date: today, count: 0 };
+  if (aiUsage[userKey].date !== today) { aiUsage[userKey] = { date: today, count: 0 }; }
+  if (aiUsage[userKey].count >= 2) return false;
+  aiUsage[userKey].count++;
+  return true;
+}
+
 /**
  * POST /api/smart-advice - Generate AI-powered recommendations using Claude API.
  * Takes character data + BiS data and returns personalized gearing advice.
@@ -658,6 +671,12 @@ app.post("/api/smart-advice", async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return res.json({ advice: null, error: "No API key configured. Set ANTHROPIC_API_KEY." });
+  }
+
+  const isLocal = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+  const userKey = req.body.userKey || 'anonymous';
+  if (!checkAIRateLimit(userKey, isLocal)) {
+    return res.json({ advice: null, error: 'Daily AI limit reached (2/day). Try again tomorrow!', rateLimited: true });
   }
 
   const { character, bisData, weeklyProgress } = req.body;
@@ -710,6 +729,72 @@ Give specific advice like "Run Voidspire boss 3 for your BiS legs" not generic t
   } catch (err) {
     console.error("Claude API error:", err.message);
     res.json({ advice: null, error: err.message });
+  }
+});
+
+/**
+ * POST /api/chat - AI chatbot endpoint for conversational gearing advice.
+ * Maintains conversation context via chatHistory in the request body.
+ * Requires ANTHROPIC_API_KEY environment variable.
+ */
+app.post("/api/chat", async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.json({ reply: null, error: "No API key" });
+
+  const isLocal = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+  const userKey = req.body.userKey || 'anonymous';
+  if (!checkAIRateLimit(userKey, isLocal)) {
+    return res.json({ reply: null, error: 'Daily AI limit reached (2/day). Try again tomorrow!', rateLimited: true });
+  }
+
+  const { message, character, bisData, chatHistory } = req.body;
+  if (!message || !character) return res.status(400).json({ error: "message and character required" });
+
+  try {
+    const client = new Anthropic({ apiKey });
+
+    const gearSummary = [];
+    for (let slot = 1; slot <= 17; slot++) {
+      const name = character[`gear_${slot}_name`];
+      const ilvl = character[`gear_${slot}_ilvl`];
+      if (name && ilvl) gearSummary.push(`Slot ${slot}: ${name} (${ilvl})`);
+    }
+
+    const systemPrompt = `You are a friendly, expert World of Warcraft: Midnight Season 1 gearing coach. You know everything about the current meta, BiS gear, M+ dungeons, raids, delves, prey hunts, and the fastest ways to gear up.
+
+CHARACTER:
+- ${character.name}, ${character.spec} ${character.class}, Level ${character.level}
+- Item Level: ${character.ilvl}, Realm: ${character.realm}
+- Vault: Dungeons ${character.vaultDungeons || 0}/8, Raid ${character.vaultRaid || 0}/6, World ${character.vaultWorld || 0}/8
+- Spark Quest: ${character.sparkDone ? 'Done' : 'Not done'}, World Boss: ${character.worldBossDone ? 'Done' : 'Not done'}
+- Prey Hunts: ${character.preyDone || 0}/3
+
+GEAR: ${gearSummary.join(', ') || 'No data'}
+${bisData ? `SPEC: ${bisData.specName}, Tier: ${bisData.tierSet?.name || '?'}` : ''}
+
+Be concise (2-3 sentences per response). Ask follow-up questions about their available time and preferences. Give SPECIFIC recommendations (name bosses, dungeons, activities). Be encouraging and fun.`;
+
+    // Build messages from history
+    const messages = [];
+    if (chatHistory && Array.isArray(chatHistory)) {
+      chatHistory.forEach(msg => {
+        messages.push({ role: msg.role, content: msg.content });
+      });
+    }
+    messages.push({ role: "user", content: message });
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: messages,
+    });
+
+    const reply = response.content[0]?.text || "";
+    res.json({ reply });
+  } catch (err) {
+    console.error("Chat error:", err.message);
+    res.json({ reply: null, error: err.message });
   }
 });
 
