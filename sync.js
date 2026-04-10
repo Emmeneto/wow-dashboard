@@ -18,14 +18,20 @@ const USERKEY_FILE = path.join(__dirname, ".userkey");
 const SAVED_VARS_FILENAME = "WoWDashboard.lua";
 const DEBOUNCE_MS = 3000; // Wait 3s after last change before uploading
 
-// ── Auto-detect WoW install ──
+// ── Auto-detect WoW install (Windows + Mac) ──
 function findWoWPath() {
+  const home = process.env.HOME || process.env.USERPROFILE || "";
   const common = [
+    // Windows
     "C:/Program Files (x86)/World of Warcraft/_retail_",
     "C:/Program Files/World of Warcraft/_retail_",
     "D:/World of Warcraft/_retail_",
     "D:/Games/World of Warcraft/_retail_",
     "E:/World of Warcraft/_retail_",
+    // Mac
+    "/Applications/World of Warcraft/_retail_",
+    path.join(home, "Applications/World of Warcraft/_retail_"),
+    // Custom
     process.env.WOW_PATH || "",
   ];
   for (const p of common) {

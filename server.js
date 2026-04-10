@@ -30,12 +30,18 @@ const IS_HOSTED = MODE === "hosted";
 // ── Paths ──
 
 function findWoWPath() {
+  const home = process.env.HOME || process.env.USERPROFILE || "";
   const common = [
+    // Windows
     "C:/Program Files (x86)/World of Warcraft/_retail_",
     "C:/Program Files/World of Warcraft/_retail_",
     "D:/World of Warcraft/_retail_",
     "D:/Games/World of Warcraft/_retail_",
     "E:/World of Warcraft/_retail_",
+    // Mac
+    "/Applications/World of Warcraft/_retail_",
+    path.join(home, "Applications/World of Warcraft/_retail_"),
+    // Custom
     process.env.WOW_PATH || "",
   ];
   for (const p of common) {
