@@ -549,9 +549,17 @@
     /* ── Panel Minimize ── */
     .card-minimized {
       min-height: 0 !important;
+      max-height: 48px !important;
+      overflow: hidden !important;
     }
     .card-minimized > *:not(:first-child) {
       display: none !important;
+    }
+    /* Consistent header height for all minimized cards */
+    .card-minimized > *:first-child {
+      min-height: 44px;
+      display: flex !important;
+      align-items: center;
     }
   </style>
 </head>
@@ -1019,9 +1027,30 @@
 
     // ── Advice ──
     let adviceData = {};
+    let aiAdvice = null;
+    let aiAdviceLoading = false;
+
     async function fetchAdvice() {
       try { const r = await fetch('/api/advice'); adviceData = await r.json(); renderAdvice(); }
       catch(e) { console.error(e); }
+    }
+
+    async function fetchAIAdvice() {
+      const c = characters[selectedKey];
+      if (!c || c.level < 90 || aiAdviceLoading) return;
+      aiAdviceLoading = true;
+      renderAdvice(); // show loading state
+      try {
+        const res = await fetch('/api/smart-advice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ character: c, bisData, weeklyProgress: { dungeons: c.vaultDungeons, raid: c.vaultRaid, world: c.vaultWorld } }),
+        });
+        const data = await res.json();
+        aiAdvice = data.advice || data.error || null;
+      } catch (err) { aiAdvice = null; }
+      aiAdviceLoading = false;
+      renderAdvice();
     }
     function renderAdvice() {
       const el = document.getElementById('advice');
@@ -1079,6 +1108,29 @@
         ilvlTip = `<div class="advice-tip"><div class="advice-tip-label">Gearing Phase: Endgame (${ilvl} ilvl)</div>Mythic raids for Myth-track gear (272-282). Push high M+ keys for better vault options. Upgrade remaining BiS pieces with Myth Dawncrests to 6/6.${weakestTip}</div>`;
       }
 
+      // AI-powered advice section
+      let aiSection = '';
+      if (aiAdviceLoading) {
+        aiSection = `<div style="padding:10px 0;text-align:center;color:#5a5545;font-size:12px;">
+          <span style="color:#3fc7eb;">&#9881;</span> Claude is analyzing your character...</div>`;
+      } else if (aiAdvice) {
+        // Convert markdown-ish bold to HTML
+        const formatted = aiAdvice.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
+        aiSection = `<div style="border-top:1px solid #2a2235;padding-top:10px;margin-top:8px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#3fc7eb;margin-bottom:6px;">
+            AI Advisor <span style="font-size:8px;color:#4a4038;font-weight:400;letter-spacing:0;">powered by Claude</span>
+          </div>
+          <div style="font-size:12px;color:#c8c0b0;line-height:1.6;white-space:pre-line;">${formatted}</div>
+        </div>`;
+      } else {
+        aiSection = `<div style="border-top:1px solid #2a2235;padding-top:8px;margin-top:8px;text-align:center;">
+          <button onclick="fetchAIAdvice()" style="background:linear-gradient(135deg,#3fc7eb,#1a9fd4);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity 0.15s;">
+            &#10024; Get AI Recommendations
+          </button>
+          <div style="font-size:9px;color:#3a3530;margin-top:4px;">Analyzes your gear, progress, and BiS data</div>
+        </div>`;
+      }
+
       el.innerHTML = `
         <div class="advice-card" data-panel="advice">
           <div class="advice-header" style="display:flex;justify-content:space-between;align-items:center;">
@@ -1087,6 +1139,7 @@
           </div>
           <div class="advice-nextup">${adv.nextUp || ''}</div>
           ${tips}${ilvlTip}${crestAdvice}
+          ${aiSection}
         </div>`;
     }
 
@@ -1099,10 +1152,19 @@
     let bisData = null;
     let bisDetailSlot = null; // currently expanded slot
 
+    // Map class+spec to BiS data key
+    function getSpecKey(c) {
+      if (!c || !c.spec || !c.class) return null;
+      const cls = c.class.toLowerCase().replace(' ', '-');
+      const spec = (c.spec || '').toLowerCase().replace(' ', '-');
+      return `${spec}-${cls}`;  // e.g., "frost-mage", "arms-warrior", "holy-paladin"
+    }
+
     async function fetchBiS() {
       const c = characters[selectedKey];
       if (!c || c.level < 90) { document.getElementById('bis').innerHTML = ''; return; }
-      const specKey = 'frost-mage';
+      const specKey = getSpecKey(c);
+      if (!specKey) { document.getElementById('bis').innerHTML = ''; return; }
       try {
         const res = await fetch(`/api/bis/${specKey}`);
         if (res.ok) {
@@ -1111,6 +1173,17 @@
           renderCrests();
           renderExtra();
           renderAdvice();
+        } else {
+          // No BiS data for this spec yet — show helpful message
+          bisData = null;
+          document.getElementById('bis').innerHTML = `
+            <div class="card" style="border-top:2px solid rgba(163,53,238,0.3);padding:20px;text-align:center;">
+              <h2 style="font-family:'Cinzel',serif;color:#a335ee;font-size:16px;margin-bottom:8px;">Best in Slot</h2>
+              <p style="color:#5a5545;font-size:13px;">BiS data for <strong style="color:#c8c0b0;">${c.spec} ${c.class}</strong> is not available yet.</p>
+              <p style="color:#4a4038;font-size:11px;margin-top:6px;">BiS data is being added for more specs. Check back soon!</p>
+            </div>`;
+          renderCrests();
+          renderExtra();
         }
       } catch (err) { console.error('Failed to fetch BiS:', err); }
     }

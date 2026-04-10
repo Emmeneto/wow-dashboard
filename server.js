@@ -17,6 +17,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const Anthropic = require("@anthropic-ai/sdk");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -645,6 +646,70 @@ app.get("/api/bis/:spec", (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ error: "Failed to load BiS data" });
+  }
+});
+
+/**
+ * POST /api/smart-advice - Generate AI-powered recommendations using Claude API.
+ * Takes character data + BiS data and returns personalized gearing advice.
+ * Requires ANTHROPIC_API_KEY environment variable.
+ */
+app.post("/api/smart-advice", async (req, res) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.json({ advice: null, error: "No API key configured. Set ANTHROPIC_API_KEY." });
+  }
+
+  const { character, bisData, weeklyProgress } = req.body;
+  if (!character) {
+    return res.status(400).json({ error: "character data required" });
+  }
+
+  try {
+    const client = new Anthropic({ apiKey });
+
+    // Build a concise character summary for Claude
+    const gearSummary = [];
+    for (let slot = 1; slot <= 17; slot++) {
+      const name = character[`gear_${slot}_name`];
+      const ilvl = character[`gear_${slot}_ilvl`];
+      if (name && ilvl) gearSummary.push(`Slot ${slot}: ${name} (${ilvl})`);
+    }
+
+    const prompt = `You are a World of Warcraft: Midnight Season 1 gearing advisor. Analyze this character and give 3-4 specific, actionable recommendations for what they should do RIGHT NOW to improve their gear most efficiently. Be concise (2-3 sentences each).
+
+CHARACTER:
+- Name: ${character.name}, ${character.spec} ${character.class}
+- Item Level: ${character.ilvl}
+- Level: ${character.level}
+- Realm: ${character.realm}
+
+WEEKLY PROGRESS:
+- Vault Dungeons: ${character.vaultDungeons || 0}/8
+- Vault Raid: ${character.vaultRaid || 0}/6
+- Vault World: ${character.vaultWorld || 0}/8
+- Spark Quest: ${character.sparkDone ? 'Done' : 'Not done'}
+- World Boss: ${character.worldBossDone ? 'Done' : 'Not done'}
+- Prey Hunts: ${character.preyDone || 0}/3
+
+EQUIPPED GEAR:
+${gearSummary.join('\n') || 'No gear data available'}
+
+${bisData ? `BIS DATA AVAILABLE: ${bisData.specName}\nTier Set: ${bisData.tierSet?.name || 'Unknown'}` : 'No BiS data for this spec yet.'}
+
+Give specific advice like "Run Voidspire boss 3 for your BiS legs" not generic tips like "do more M+". Prioritize by impact. Format each recommendation with a bold title and explanation.`;
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 500,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const adviceText = response.content[0]?.text || "";
+    res.json({ advice: adviceText });
+  } catch (err) {
+    console.error("Claude API error:", err.message);
+    res.json({ advice: null, error: err.message });
   }
 });
 

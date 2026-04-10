@@ -10,10 +10,18 @@
     "type": "git",
     "url": "https://github.com/ekeef/wow-dashboard"
   },
-  "keywords": ["wow", "world-of-warcraft", "midnight", "addon", "dashboard", "gearing"],
+  "keywords": [
+    "wow",
+    "world-of-warcraft",
+    "midnight",
+    "addon",
+    "dashboard",
+    "gearing"
+  ],
   "author": "ekeef",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.87.0",
     "express": "^4.21.0"
   }
 }
