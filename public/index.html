@@ -101,12 +101,13 @@
     .char-main-info { font-size: 12px; color: #5a5545; margin-top: 2px; }
     .char-main-stats {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
-      margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #2a2235;
+      margin-top: 14px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #2a2235;
     }
     .char-main-stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
     .char-main-stat-value { font-size: 18px; font-weight: 600; }
     .char-detail-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+      margin-top: 12px;
     }
     .char-detail-item { display: flex; flex-direction: column; gap: 2px; }
     .char-detail-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
@@ -180,7 +181,7 @@
     .section-title {
       font-size: 10px;
       font-weight: 700;
-      text-transform: uppercase;
+      text-transform: none;
       letter-spacing: 2px;
       color: #ffd700;
       padding: 12px 18px 6px;
@@ -243,7 +244,7 @@
       border-radius: 0 6px 6px 0; margin-top: 5px;
     }
     .advice-tip-label {
-      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      font-size: 9px; font-weight: 700; text-transform: none;
       letter-spacing: 1px; color: #5a9db8; margin-bottom: 2px;
     }
 
@@ -281,7 +282,7 @@
     }
     .vault-row-title {
       font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 1.5px;
+      text-transform: none; letter-spacing: 1.5px;
     }
     .vault-row-title.dungeons { color: #3fc7eb; }
     .vault-row-title.raid { color: #e74c3c; }
@@ -522,14 +523,14 @@
     }
     .crest-header h2 { font-size: 15px; font-weight: 700; color: #f39c12; font-family: 'Cinzel', serif; letter-spacing: 1px; }
     .crest-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 14px 18px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 14px 18px;
     }
     @media (max-width: 760px) { .crest-grid { grid-template-columns: repeat(2, 1fr); } }
     .crest-tier {
       padding: 12px; border-radius: 6px; border: 1px solid #2a2235; background: #12101e;
-      text-align: center;
+      text-align: center; min-height: 80px;
     }
-    .crest-tier-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .crest-tier-name { font-size: 11px; font-weight: 700; text-transform: none; letter-spacing: 1px; margin-bottom: 6px; }
     .crest-tier-count { font-size: 20px; font-weight: 700; font-family: 'Cinzel', serif; }
     .crest-tier-cap { font-size: 10px; color: #4a4038; margin-top: 2px; }
     .crest-tier-bar { height: 4px; background: #1a1528; border-radius: 2px; margin-top: 6px; overflow: hidden; }
@@ -542,6 +543,26 @@
     .crest-champion { color: #a335ee; }
     .crest-hero { color: #ff8000; }
     .crest-myth { color: #e6cc80; }
+
+    /* ── Consumables Card ── */
+    .consumables-card {
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(46, 204, 113, 0.3);
+      border-radius: 8px; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .consumable-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      padding: 14px 18px;
+    }
+    .consumable-item {
+      padding: 8px 10px; border-radius: 6px;
+      border: 1px solid #2a2235; background: #12101e;
+    }
+    .consumable-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
+    .consumable-name { font-size: 11px; font-weight: 500; color: #2ecc71; margin-top: 2px; }
+    .consumable-stat { font-size: 10px; color: #5a5545; margin-top: 1px; }
 
     /* ── Draggable Panels ── */
     .panel-ghost { opacity: 0.3; }
@@ -675,6 +696,9 @@
       <div class="panel-row panel-row-half">
         <div id="crests"></div>
         <div id="extra"></div>
+      </div>
+      <div class="panel-row">
+        <div id="consumables"></div>
       </div>
     </div>
 
@@ -834,6 +858,7 @@
           document.getElementById('bis').innerHTML = '';
           document.getElementById('crests').innerHTML = '';
           document.getElementById('extra').innerHTML = '';
+          document.getElementById('consumables').innerHTML = '';
         }
       } catch (err) { console.error('Failed to fetch:', err); }
     }
@@ -989,6 +1014,7 @@
             document.getElementById('bis').innerHTML = '';
             document.getElementById('crests').innerHTML = '';
             document.getElementById('extra').innerHTML = '';
+            document.getElementById('consumables').innerHTML = '';
           }
         });
       });
@@ -1375,6 +1401,7 @@
           renderBiS();
           renderCrests();
           renderExtra();
+          fetchConsumables();
           renderAdvice();
         } else {
           const data = await res.json();
@@ -1691,7 +1718,7 @@
             <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
           </div>
           <div class="crest-grid">${tiersHtml}</div>
-          <div style="padding:6px 18px 0;font-size:9px;color:#4a4038;border-top:1px solid #2a2235;">&#9733; = recommended tier for your current ilvl</div>
+          <div style="padding:0 18px 4px;font-size:9px;color:#4a4038;border-top:1px solid #2a2235;padding-top:6px;">&#9733; = recommended tier for your current ilvl</div>
           <div style="padding:12px 18px;border-top:1px solid #2a2235;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f39c12;margin-bottom:6px;">What to Farm Next</div>
             <div style="font-size:12px;color:#c8c0b0;line-height:1.5;">${crestReason}${farmAdvice}</div>
@@ -1746,6 +1773,86 @@
             <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
           </div>
           <div style="padding:14px 18px;">${farmsHtml}</div>
+        </div>`;
+    }
+
+    // ── Consumables ──
+    let consumablesData = null;
+
+    async function fetchConsumables() {
+      const c = characters[selectedKey];
+      if (!c || c.level < 90) { document.getElementById('consumables').innerHTML = ''; return; }
+      const specKey = getSpecKey(c);
+      if (!specKey) return;
+      try {
+        const res = await fetch(`/api/consumables/${specKey}`);
+        if (res.ok) { consumablesData = await res.json(); renderConsumables(); }
+        else {
+          const data = await res.json();
+          if (data.generating) {
+            document.getElementById('consumables').innerHTML = `
+              <div class="consumables-card" style="padding:20px;text-align:center;">
+                <h2 style="font-family:'Cinzel',serif;color:#2ecc71;font-size:14px;">Consumables & Enchants</h2>
+                <div style="color:#3fc7eb;font-size:12px;margin-top:8px;"><span style="animation:pulse 1.5s infinite;">&#9881;</span> Generating for ${c.spec} ${c.class}...</div>
+              </div>`;
+            setTimeout(fetchConsumables, 5000);
+          }
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    function renderConsumables() {
+      const el = document.getElementById('consumables');
+      if (!consumablesData) { el.innerHTML = ''; return; }
+      const d = consumablesData;
+
+      const enchantItems = Object.entries(d.enchants || {}).map(([slot, e]) =>
+        `<div class="consumable-item">
+          <div class="consumable-label">${slot}</div>
+          <div class="consumable-name">${e.name}</div>
+          <div class="consumable-stat">${e.stat}</div>
+        </div>`
+      ).join('');
+
+      const gemItems = [
+        `<div class="consumable-item">
+          <div class="consumable-label">Primary Gem</div>
+          <div class="consumable-name">${d.gems?.primary?.name || '?'}</div>
+          <div class="consumable-stat">${d.gems?.primary?.stat || ''}</div>
+        </div>`,
+        ...(d.gems?.secondary || []).map(g =>
+          `<div class="consumable-item">
+            <div class="consumable-label">Secondary Gem</div>
+            <div class="consumable-name">${g.name}</div>
+            <div class="consumable-stat">${g.stat}</div>
+          </div>`
+        )
+      ].join('');
+
+      const consItems = Object.entries(d.consumables || {}).map(([key, c]) => {
+        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+        return `<div class="consumable-item">
+          <div class="consumable-label">${label}</div>
+          <div class="consumable-name">${c.name}</div>
+          <div class="consumable-stat">${c.stat || c.usage || c.note || ''}</div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="consumables-card" data-panel="consumables">
+          <div style="padding:14px 18px;border-bottom:1px solid #2a2235;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,rgba(46,204,113,0.05) 0%,transparent 100%);">
+            <h2 style="font-size:14px;font-weight:700;color:#2ecc71;font-family:'Cinzel',serif;letter-spacing:1px;">
+              <span class="panel-drag-handle">&#8942;&#8942;</span> Consumables & Enchants
+            </h2>
+            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+          </div>
+          <div style="padding:10px 18px 4px;font-size:10px;font-weight:600;color:#2ecc71;letter-spacing:1px;">Enchants</div>
+          <div class="consumable-grid">${enchantItems}</div>
+          <div style="padding:10px 18px 4px;font-size:10px;font-weight:600;color:#a335ee;letter-spacing:1px;">Gems</div>
+          <div class="consumable-grid">${gemItems}</div>
+          ${d.gems?.note ? `<div style="padding:0 18px 8px;font-size:10px;color:#4a4038;">${d.gems.note}</div>` : ''}
+          <div style="padding:10px 18px 4px;font-size:10px;font-weight:600;color:#f39c12;letter-spacing:1px;">Consumables</div>
+          <div class="consumable-grid">${consItems}</div>
         </div>`;
     }
 

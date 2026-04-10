@@ -68,6 +68,16 @@ if (IS_HOSTED && !fs.existsSync(DATA_DIR)) {
 }
 
 app.use(express.json({ limit: "5mb" }));
+
+// CORS for Electron app calling Railway
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 // ── Uploaded Data Store (hosted mode) ──
@@ -814,6 +824,119 @@ app.get("/api/bis/:spec", async (req, res) => {
   } else {
     res.status(503).json({ error: "BiS data is being generated. Refresh in a few seconds.", generating: true });
   }
+});
+
+// ── Auto-generating Consumables Data ──
+const CONSUMABLES_FILE = path.join(__dirname, "consumables-data.json");
+const consumablesGenerating = {};
+
+function loadConsumablesData() {
+  try {
+    if (fs.existsSync(CONSUMABLES_FILE)) return JSON.parse(fs.readFileSync(CONSUMABLES_FILE, "utf-8"));
+  } catch(e) {}
+  return {};
+}
+
+function saveConsumablesData(data) {
+  fs.writeFileSync(CONSUMABLES_FILE, JSON.stringify(data, null, 2));
+}
+
+async function generateConsumablesForSpec(specKey) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+  if (consumablesGenerating[specKey]) return null;
+  consumablesGenerating[specKey] = true;
+  console.log(`Generating consumables for ${specKey}...`);
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const [spec, ...classParts] = specKey.split("-");
+    const className = classParts.join(" ");
+    const specName = spec.charAt(0).toUpperCase() + spec.slice(1);
+    const classNameCap = className.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      messages: [{
+        role: "user",
+        content: `You are a WoW Midnight Season 1 expert. Generate the optimal consumables, enchants, and gems for ${specName} ${classNameCap} (PvE).
+
+Return ONLY valid JSON, no markdown, no code blocks:
+
+{
+  "specName": "${specName} ${classNameCap}",
+  "enchants": {
+    "weapon": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "head": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "chest": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "legs": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "boots": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "wrist": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "ring1": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "ring2": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"},
+    "cloak": {"name": "ENCHANT_NAME", "stat": "WHAT_IT_GIVES"}
+  },
+  "gems": {
+    "primary": {"name": "GEM_NAME", "stat": "WHAT_IT_GIVES"},
+    "secondary": [
+      {"name": "GEM_NAME", "stat": "WHAT_IT_GIVES"}
+    ],
+    "note": "Mix requirement note"
+  },
+  "consumables": {
+    "flask": {"name": "FLASK_NAME", "stat": "WHAT_IT_GIVES", "duration": "DURATION"},
+    "potion": {"name": "POTION_NAME", "stat": "WHAT_IT_GIVES", "usage": "WHEN_TO_USE"},
+    "healthPotion": {"name": "POTION_NAME"},
+    "food": {"name": "FOOD_NAME", "stat": "WHAT_IT_GIVES"},
+    "augmentRune": {"name": "RUNE_NAME", "stat": "WHAT_IT_GIVES"},
+    "weaponBuff": {"name": "OIL_OR_STONE_NAME", "stat": "WHAT_IT_GIVES"},
+    "tea": {"name": "TEA_NAME", "stat": "WHAT_IT_GIVES", "note": "Stacks with food"}
+  }
+}
+
+Context: WoW Midnight Season 1 (patch 12.0, April 2026). Thalassian-themed consumables, Eversong gems. Return ONLY the JSON.`
+      }],
+    });
+
+    const text = response.content[0]?.text || "";
+    const jsonStr = text.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+    const result = JSON.parse(jsonStr);
+
+    const allData = loadConsumablesData();
+    allData[specKey] = { ...result, _generatedAt: new Date().toISOString() };
+    saveConsumablesData(allData);
+    console.log(`Consumables generated for ${specKey}`);
+    return result;
+  } catch (err) {
+    console.error(`Failed to generate consumables for ${specKey}:`, err.message);
+    return null;
+  } finally {
+    delete consumablesGenerating[specKey];
+  }
+}
+
+app.get("/api/consumables/:spec", async (req, res) => {
+  const spec = req.params.spec;
+  const allData = loadConsumablesData();
+
+  if (allData[spec]) {
+    const generatedAt = allData[spec]._generatedAt;
+    if (generatedAt) {
+      const ageDays = (Date.now() - new Date(generatedAt).getTime()) / (1000*60*60*24);
+      if (ageDays < 7) return res.json(allData[spec]);
+      generateConsumablesForSpec(spec);
+      return res.json(allData[spec]);
+    }
+    return res.json(allData[spec]);
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(404).json({ error: "No consumables data and no API key" });
+
+  const result = await generateConsumablesForSpec(spec);
+  if (result) res.json(result);
+  else res.status(503).json({ error: "Generating consumables. Refresh in a few seconds.", generating: true });
 });
 
 // ── AI Rate Limiting ──
