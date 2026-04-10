@@ -71,9 +71,13 @@ app.use(express.json({ limit: "5mb" }));
 
 // CORS for Electron app calling Railway
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const allowedOrigins = ['http://localhost:3000', 'https://wow-dashboard-production-ca94.up.railway.app'];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Headers', 'Content-Type');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
@@ -568,6 +572,15 @@ app.post("/api/upload", (req, res) => {
     return res.status(400).json({ error: "userKey and characters object required" });
   }
 
+  const charKeys = Object.keys(characters);
+  if (charKeys.length > 50) {
+    return res.status(400).json({ error: "Too many characters (max 50)" });
+  }
+  const bodySize = JSON.stringify(characters).length;
+  if (bodySize > 500000) {
+    return res.status(400).json({ error: "Upload too large (max 500KB)" });
+  }
+
   const data = loadUploadedData();
 
   // Register user if new
@@ -580,7 +593,6 @@ app.post("/api/upload", (req, res) => {
   data.users[userKey].lastUpload = new Date().toISOString();
 
   // Merge character data
-  const charKeys = Object.keys(characters);
   for (const ck of charKeys) {
     if (!ck.includes("-")) continue; // skip non-character keys
     data.characters[ck] = {
@@ -679,6 +691,17 @@ app.get("/api/advice", (req, res) => {
   res.json(advice);
 });
 
+// ── Generation Rate Limiting ──
+const generationCooldown = {}; // { specKey: lastGeneratedTimestamp }
+function canGenerate(specKey) {
+  const last = generationCooldown[specKey];
+  if (!last) return true;
+  return (Date.now() - last) > 60000; // 1 minute cooldown between generations for same spec
+}
+function markGenerated(specKey) {
+  generationCooldown[specKey] = Date.now();
+}
+
 // ── Auto-generating BiS Data ──
 const BIS_FILE = path.join(__dirname, "bis-data.json");
 const bisGenerating = {}; // track in-progress generations to avoid duplicates
@@ -698,6 +721,7 @@ async function generateBisForSpec(specKey) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
   if (bisGenerating[specKey]) return null; // already generating
+  if (!canGenerate(specKey)) return null; // rate limited
 
   bisGenerating[specKey] = true;
   console.log(`Generating BiS data for ${specKey}...`);
@@ -775,6 +799,7 @@ Return ONLY the JSON object, nothing else.`
     saveBisData(allBis);
 
     console.log(`BiS data generated and saved for ${specKey}`);
+    markGenerated(specKey);
     logConversation({
       type: "bis-generation",
       spec: specKey,
@@ -845,6 +870,7 @@ async function generateConsumablesForSpec(specKey) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
   if (consumablesGenerating[specKey]) return null;
+  if (!canGenerate(specKey)) return null; // rate limited
   consumablesGenerating[specKey] = true;
   console.log(`Generating consumables for ${specKey}...`);
 
@@ -906,6 +932,7 @@ Context: WoW Midnight Season 1 (patch 12.0, April 2026). Thalassian-themed consu
     const allData = loadConsumablesData();
     allData[specKey] = { ...result, _generatedAt: new Date().toISOString() };
     saveConsumablesData(allData);
+    markGenerated(specKey);
     console.log(`Consumables generated for ${specKey}`);
     return result;
   } catch (err) {
@@ -1028,7 +1055,7 @@ Give specific advice like "Run Voidspire boss 3 for your BiS legs" not generic t
     res.json({ advice: adviceText });
   } catch (err) {
     console.error("Claude API error:", err.message);
-    res.json({ advice: null, error: err.message });
+    res.json({ advice: null, error: "Failed to generate recommendations. Try again." });
   }
 });
 
@@ -1109,7 +1136,7 @@ Be concise (2-3 sentences per response). Ask follow-up questions about their ava
     res.json({ reply });
   } catch (err) {
     console.error("Chat error:", err.message);
-    res.json({ reply: null, error: err.message });
+    res.json({ reply: null, error: "Failed to get response. Try again." });
   }
 });
 
@@ -1199,6 +1226,41 @@ app.post("/api/tracker/:charKey", (req, res) => {
   saveTracker(data);
 
   res.json({ success: true, weekKey });
+});
+
+// ── Self-service Data Deletion ──
+
+app.delete("/api/user/:userKey", (req, res) => {
+  const userKey = req.params.userKey;
+
+  // Remove from uploaded characters
+  const uploaded = loadUploadedData();
+  if (uploaded.users[userKey]) {
+    const charKeys = uploaded.users[userKey].characters || [];
+    charKeys.forEach(ck => delete uploaded.characters[ck]);
+    delete uploaded.users[userKey];
+    saveUploadedData(uploaded);
+  }
+
+  // Remove from subscribers
+  try {
+    if (fs.existsSync(SUBSCRIBERS_FILE)) {
+      let subs = JSON.parse(fs.readFileSync(SUBSCRIBERS_FILE, "utf-8"));
+      subs = subs.filter(s => s !== userKey);
+      fs.writeFileSync(SUBSCRIBERS_FILE, JSON.stringify(subs, null, 2));
+    }
+  } catch(e) {}
+
+  // Remove chat logs for this user
+  try {
+    if (fs.existsSync(CHAT_LOG_FILE)) {
+      let logs = JSON.parse(fs.readFileSync(CHAT_LOG_FILE, "utf-8"));
+      logs = logs.filter(l => l.userKey !== userKey);
+      fs.writeFileSync(CHAT_LOG_FILE, JSON.stringify(logs, null, 2));
+    }
+  } catch(e) {}
+
+  res.json({ deleted: true, userKey });
 });
 
 // ── Server Start ──

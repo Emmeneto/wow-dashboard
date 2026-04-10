@@ -559,6 +559,12 @@
     .consumable-item {
       padding: 8px 10px; border-radius: 6px;
       border: 1px solid #2a2235; background: #12101e;
+      transition: all 0.15s;
+      cursor: default;
+    }
+    .consumable-item:hover {
+      border-color: #3a3040;
+      background: #1a1528;
     }
     .consumable-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
     .consumable-name { font-size: 11px; font-weight: 500; color: #2ecc71; margin-top: 2px; }
@@ -746,6 +752,12 @@
       'SHAMAN':'shaman','MAGE':'mage','WARLOCK':'warlock','MONK':'monk',
       'DRUID':'druid','DEMONHUNTER':'demonhunter','DEMON HUNTER':'demonhunter','EVOKER':'evoker',
     };
+
+    function sanitizeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
 
     const EU_REALMS = ['Draenor','Frostmane','Outland','Tarren Mill'];
     const VAULT = {
@@ -1173,7 +1185,7 @@
       input.value = '';
 
       const messagesEl = document.getElementById('inlineChatMessages');
-      messagesEl.innerHTML += `<div style="align-self:flex-end;background:#1a3a5c;color:#c8c0b0;padding:6px 10px;border-radius:8px;border-bottom-right-radius:3px;font-size:11px;max-width:80%;">${msg}</div>`;
+      messagesEl.innerHTML += `<div style="align-self:flex-end;background:#1a3a5c;color:#c8c0b0;padding:6px 10px;border-radius:8px;border-bottom-right-radius:3px;font-size:11px;max-width:80%;">${sanitizeHTML(msg)}</div>`;
       messagesEl.innerHTML += `<div id="inlineThinking" style="align-self:flex-start;color:#4a4038;font-size:10px;font-style:italic;">Thinking...</div>`;
       messagesEl.scrollTop = messagesEl.scrollHeight;
 
@@ -1201,8 +1213,8 @@
         if (thinking) thinking.remove();
 
         if (data.reply) {
-          const fmt = data.reply.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
-          messagesEl.innerHTML += `<div style="align-self:flex-start;background:#1a1528;border:1px solid #2a2235;color:#c8c0b0;padding:6px 10px;border-radius:8px;border-bottom-left-radius:3px;font-size:11px;max-width:85%;line-height:1.5;">${fmt}</div>`;
+          const safereply = sanitizeHTML(data.reply).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
+          messagesEl.innerHTML += `<div style="align-self:flex-start;background:#1a1528;border:1px solid #2a2235;color:#c8c0b0;padding:6px 10px;border-radius:8px;border-bottom-left-radius:3px;font-size:11px;max-width:85%;line-height:1.5;">${safereply}</div>`;
           inlineChatHistory.push({ role: 'assistant', content: data.reply });
         } else if (data.rateLimited) {
           messagesEl.innerHTML += `<div style="align-self:center;color:#e74c3c;font-size:10px;">${data.error}</div>`;
@@ -1311,7 +1323,7 @@
         aiSection = `<div style="padding:10px 0;text-align:center;color:#5a5545;font-size:12px;">
           <span style="color:#3fc7eb;">&#9881;</span> Claude is analyzing your character...</div>`;
       } else if (aiAdvice) {
-        const formatted = aiAdvice.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
+        const formatted = sanitizeHTML(aiAdvice).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
         aiSection = `
           <div style="border-top:1px solid #2a2235;padding-top:10px;margin-top:8px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1811,6 +1823,7 @@
           <div class="consumable-label">${slot}</div>
           <div class="consumable-name">${e.name}</div>
           <div class="consumable-stat">${e.stat}</div>
+          <div style="font-size:8px;color:#2ecc71;margin-top:3px;">Stacks with all other buffs</div>
         </div>`
       ).join('');
 
@@ -1819,22 +1832,32 @@
           <div class="consumable-label">Primary Gem</div>
           <div class="consumable-name">${d.gems?.primary?.name || '?'}</div>
           <div class="consumable-stat">${d.gems?.primary?.stat || ''}</div>
+          <div style="font-size:8px;color:#2ecc71;margin-top:3px;">Stacks with all other buffs</div>
         </div>`,
         ...(d.gems?.secondary || []).map(g =>
           `<div class="consumable-item">
             <div class="consumable-label">Secondary Gem</div>
             <div class="consumable-name">${g.name}</div>
             <div class="consumable-stat">${g.stat}</div>
+            <div style="font-size:8px;color:#2ecc71;margin-top:3px;">Stacks with all other buffs</div>
           </div>`
         )
       ].join('');
 
+      // Stacking info per consumable type
+      const stackingInfo = {
+        flask: '<div style="font-size:8px;color:#e74c3c;margin-top:3px;">Does not stack with other flasks</div>',
+        augmentRune: '<div style="font-size:8px;color:#f39c12;margin-top:3px;">Lost on death — re-apply after wipes</div>',
+      };
+
       const consItems = Object.entries(d.consumables || {}).map(([key, c]) => {
         const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+        const stacking = stackingInfo[key] || '<div style="font-size:8px;color:#2ecc71;margin-top:3px;">Stacks with all other buffs</div>';
         return `<div class="consumable-item">
           <div class="consumable-label">${label}</div>
           <div class="consumable-name">${c.name}</div>
           <div class="consumable-stat">${c.stat || c.usage || c.note || ''}</div>
+          ${stacking}
         </div>`;
       }).join('');
 
@@ -1845,6 +1868,18 @@
               <span class="panel-drag-handle">&#8942;&#8942;</span> Consumables & Enchants
             </h2>
             <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+          </div>
+          <div style="padding:10px 18px;border-bottom:1px solid #2a2235;">
+            <div style="font-size:10px;font-weight:600;color:#ffd700;letter-spacing:0.5px;margin-bottom:6px;">Pre-Pull Checklist</div>
+            <div style="font-size:11px;color:#c8c0b0;line-height:1.8;">
+              1. Apply ${d.enchants?.weapon?.name || 'weapon enchant'} (permanent)<br>
+              2. Use ${d.consumables?.flask?.name || 'flask'} (1hr)<br>
+              3. Eat ${d.consumables?.food?.name || 'food'} (1hr)<br>
+              4. Apply ${d.consumables?.weaponBuff?.name || 'weapon oil'} (2hr)<br>
+              5. Use ${d.consumables?.augmentRune?.name || 'augment rune'} (1hr, re-apply after death)<br>
+              6. Pre-pot ${d.consumables?.potion?.name || 'combat potion'} at 1 sec before pull<br>
+              7. Second potion during burst window when CD resets
+            </div>
           </div>
           <div style="padding:10px 18px 4px;font-size:10px;font-weight:600;color:#2ecc71;letter-spacing:1px;">Enchants</div>
           <div class="consumable-grid">${enchantItems}</div>
@@ -1887,9 +1922,9 @@
 
     function appendChat(role, text) {
       const el = document.getElementById('chatMessages');
-      const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      const safe = role === 'ai' ? sanitizeHTML(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') : sanitizeHTML(text);
       const cls = role === 'user' ? 'user' : role === 'system' ? 'system' : 'ai';
-      el.innerHTML += `<div class="chat-msg ${cls}">${formatted}</div>`;
+      el.innerHTML += `<div class="chat-msg ${cls}">${safe}</div>`;
       el.scrollTop = el.scrollHeight;
     }
 
