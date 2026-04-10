@@ -57,34 +57,30 @@
     .reset-banner strong { color: #ffd700; font-weight: 600; }
 
     /* ── Character Select ── */
-    .char-select {
+    .char-area {
       display: flex;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
-    .char-main {
+    .char-main-card {
       flex: 1;
-    }
-    .char-sidebar {
-      width: 180px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    @media (max-width: 760px) {
-      .char-select { flex-direction: column; }
-      .char-sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
-    }
-
-    .char-main-tile {
       background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
       border: 1px solid #2a2235;
       border-top: 3px solid var(--class-color, #ffd700);
       border-radius: 8px;
       padding: 20px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      transition: all 0.3s ease;
+    }
+    .char-others {
+      width: 160px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    @media (max-width: 760px) {
+      .char-area { flex-direction: column; }
+      .char-others { width: 100%; flex-direction: row; overflow-x: auto; }
     }
     .char-main-top {
       display: flex;
@@ -105,9 +101,20 @@
     .char-main-info { font-size: 12px; color: #5a5545; margin-top: 2px; }
     .char-main-stats {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #2a2235;
     }
     .char-main-stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
     .char-main-stat-value { font-size: 18px; font-weight: 600; }
+    .char-detail-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    }
+    .char-detail-item { display: flex; flex-direction: column; gap: 2px; }
+    .char-detail-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
+    .char-detail-value { font-size: 12px; font-weight: 500; }
+    @media (max-width: 760px) {
+      .char-main-stats { grid-template-columns: repeat(2, 1fr); }
+      .char-detail-grid { grid-template-columns: repeat(2, 1fr); }
+    }
 
     .char-side-tile {
       background: #12101e;
@@ -148,7 +155,6 @@
       .panel-row-half > div { min-height: 0; }
       .panel-row-half > div > .card,
       .panel-row-half > div > .advice-card { min-height: 340px; }
-      #dashboard > .card, #advice > .advice-card { min-height: 340px; }
       #tracker > .tracker-card, #bis > .bis-card { min-height: auto; }
     }
     .panel-full { grid-column: 1 / -1; }
@@ -570,11 +576,10 @@
     <div class="reset-banner" id="resetBanner"></div>
 
     <div id="landing"></div>
-    <div id="charTiles"></div>
+    <div id="charArea"></div>
 
     <div class="main-content">
-      <div class="panel-row panel-row-half">
-        <div id="dashboard"></div>
+      <div class="panel-row">
         <div id="advice"></div>
       </div>
       <div class="panel-row panel-row-half">
@@ -710,7 +715,6 @@
         const res = await fetch(url);
         characters = await res.json();
         renderTiles();
-        renderDashboard();
         updateResetBanner();
         if (selectedKey && characters[selectedKey] && characters[selectedKey].level >= 90) {
           await fetchTracker();
@@ -754,7 +758,7 @@
 
     // ── Character Tiles ──
     function renderTiles() {
-      const el = document.getElementById('charTiles');
+      const el = document.getElementById('charArea');
       const landing = document.getElementById('landing');
       const keys = Object.keys(characters).filter(k => characters[k].name);
 
@@ -794,6 +798,15 @@
       const selClassName = selChar.class ? selChar.class.charAt(0) + selChar.class.slice(1).toLowerCase() : '';
       const prog = getWeeklyProgress(selChar);
 
+      // Merged character detail data
+      const gold = selChar.gold||0;
+      const totalBags = selChar.totalBagSlots||1, freeBags = selChar.freeBagSlots||0;
+      const bagPct = Math.round(((totalBags-freeBags)/totalBags)*100);
+      const bagColor = bagPct > 90 ? '#e74c3c' : bagPct > 70 ? '#f39c12' : '#2ecc71';
+      const prof1 = selChar.prof1Name ? `${selChar.prof1Name} (${selChar.prof1Rank}/${selChar.prof1Max})` : 'None';
+      const prof2 = selChar.prof2Name ? `${selChar.prof2Name} (${selChar.prof2Rank}/${selChar.prof2Max})` : 'None';
+      const location = selChar.subZone && selChar.subZone !== selChar.zone ? `${selChar.subZone}, ${selChar.zone}` : (selChar.zone || 'Unknown');
+
       const otherKeys = keys.filter(k => k !== selectedKey);
 
       const sidebarHtml = otherKeys.map(key => {
@@ -813,35 +826,52 @@
       }).join('');
 
       el.innerHTML = `
-        <div class="char-select">
-          <div class="char-main">
-            <div class="char-main-tile" style="--class-color:${selColor}">
-              <div class="char-main-top">
-                <div class="char-main-portrait" style="border-color:${selColor}">
-                  <img src="${selIconUrl}" onerror="this.style.display='none'">
-                </div>
-                <div>
-                  <div class="char-main-name" style="color:${selColor}">${selChar.name}</div>
-                  <div class="char-main-info">${selChar.spec || ''} ${selClassName} · ${selChar.realm}</div>
-                  <div class="char-main-info">${selChar.guildName ? '&lt;' + selChar.guildName + '&gt; ' + (selChar.guildRank||'') : 'No Guild'}</div>
-                </div>
+        <div class="char-area">
+          <div class="char-main-card" style="--class-color:${selColor}">
+            <div class="char-main-top">
+              <div class="char-main-portrait" style="border-color:${selColor}">
+                <img src="${selIconUrl}" onerror="this.style.display='none'">
               </div>
-              <div class="char-main-stats">
-                <div><div class="char-main-stat-label">Level</div><div class="char-main-stat-value">${selChar.level}</div></div>
-                <div><div class="char-main-stat-label">Item Level</div><div class="char-main-stat-value" style="color:#a335ee">${selChar.ilvl || 0}</div></div>
-                <div><div class="char-main-stat-label">Gold</div><div class="char-main-stat-value" style="color:#ffd700">${(selChar.gold||0).toLocaleString()}g</div></div>
-                <div><div class="char-main-stat-label">Weekly</div><div class="char-main-stat-value" style="color:#2ecc71">${prog.pct}%</div></div>
+              <div>
+                <div class="char-main-name" style="color:${selColor}">${selChar.name}</div>
+                <div class="char-main-info">${selChar.spec || ''} ${selClassName} · ${selChar.realm}</div>
+                <div class="char-main-info">${selChar.guildName ? '&lt;' + selChar.guildName + '&gt; ' + (selChar.guildRank||'') : 'No Guild'}</div>
               </div>
             </div>
+            <div class="char-main-stats">
+              <div><div class="char-main-stat-label">Level</div><div class="char-main-stat-value">${selChar.level}</div></div>
+              <div><div class="char-main-stat-label">Item Level</div><div class="char-main-stat-value" style="color:#a335ee">${selChar.ilvl || 0}</div></div>
+              <div><div class="char-main-stat-label">Gold</div><div class="char-main-stat-value" style="color:#ffd700">${(gold).toLocaleString()}g</div></div>
+              <div><div class="char-main-stat-label">Weekly</div><div class="char-main-stat-value" style="color:#2ecc71">${prog.pct}%</div></div>
+            </div>
+            <div class="char-detail-grid">
+              <div class="char-detail-item"><span class="char-detail-label">Location</span><span class="char-detail-value zone-value">${location}</span></div>
+              <div class="char-detail-item"><span class="char-detail-label">Time Played</span><span class="char-detail-value played-value">${formatPlayedTime(selChar.playedTotal)}</span></div>
+              <div class="char-detail-item"><span class="char-detail-label">Profession 1</span><span class="char-detail-value prof-value">${prof1}</span></div>
+              <div class="char-detail-item"><span class="char-detail-label">Profession 2</span><span class="char-detail-value prof-value">${prof2}</span></div>
+              <div class="char-detail-item"><span class="char-detail-label">Mounts</span><span class="char-detail-value mount-value">${selChar.mountsCollected||0} / ${selChar.mountsTotal||0}</span></div>
+              <div class="char-detail-item"><span class="char-detail-label">Pets</span><span class="char-detail-value mount-value">${selChar.petsOwned||0}</span></div>
+              <div class="char-detail-item">
+                <span class="char-detail-label">Bag Space</span>
+                <span class="char-detail-value">${freeBags} free / ${totalBags}</span>
+                <div class="bag-bar"><div class="bag-bar-fill" style="width:${bagPct}%;background:${bagColor};"></div></div>
+              </div>
+              <div class="char-detail-item">
+                <span class="char-detail-label">Rested XP</span>
+                ${selChar.level >= 90 ? '<span class="char-detail-value" style="color:#3a3530;">Max Level</span>'
+                  : `<span class="char-detail-value" style="color:#a335ee;">${selChar.restedPct||0}%</span>
+                     <div class="rested-bar"><div class="rested-bar-fill" style="width:${Math.min(selChar.restedPct||0,100)}%;"></div></div>`}
+              </div>
+            </div>
+            <div style="margin-top:10px;font-size:10px;color:#3a3530;text-align:right;">${selChar.realm} · Updated: ${selChar.lastUpdated||'Unknown'}</div>
           </div>
-          ${otherKeys.length > 0 ? `<div class="char-sidebar">${sidebarHtml}</div>` : ''}
+          ${otherKeys.length > 0 ? `<div class="char-others">${sidebarHtml}</div>` : ''}
         </div>`;
 
       el.querySelectorAll('.char-side-tile').forEach(tile => {
         tile.addEventListener('click', async () => {
           selectedKey = tile.dataset.key;
           renderTiles();
-          renderDashboard();
           updateResetBanner();
           const ch = characters[selectedKey];
           if (ch && ch.level >= 90) { await fetchTracker(); fetchAdvice(); fetchBiS(); }
@@ -854,59 +884,6 @@
           }
         });
       });
-    }
-
-    // ── Character Detail Card ──
-    function renderDashboard() {
-      const el = document.getElementById('dashboard');
-      const c = characters[selectedKey];
-      if (!c) { el.innerHTML = '<div class="empty-state"><p>No character data yet.</p><div class="instructions">1. Install WoWDashboard addon<br>2. Log into WoW<br>3. /reload</div></div>'; return; }
-      const classCSS = CLASS_CSS[c.class ? c.class.charAt(0)+c.class.slice(1).toLowerCase().replace('death k','Death K').replace('demon h','Demon H') : ''] || '';
-      const gold = c.gold||0, silver = c.silver||0, copper = c.copper||0;
-      const totalBags = c.totalBagSlots||1, freeBags = c.freeBagSlots||0;
-      const bagPct = Math.round(((totalBags-freeBags)/totalBags)*100);
-      const bagColor = bagPct > 90 ? '#e74c3c' : bagPct > 70 ? '#f39c12' : '#2ecc71';
-      const prof1 = c.prof1Name ? `${c.prof1Name} (${c.prof1Rank}/${c.prof1Max})` : 'None';
-      const prof2 = c.prof2Name ? `${c.prof2Name} (${c.prof2Rank}/${c.prof2Max})` : 'None';
-      const location = c.subZone && c.subZone !== c.zone ? `${c.subZone}, ${c.zone}` : (c.zone || 'Unknown');
-      const isMax = c.level >= 90;
-      const restedPct = c.restedPct || 0;
-
-      el.innerHTML = `
-        <div class="card" data-panel="dashboard">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding-right:12px;">
-            <span class="section-title" style="flex:1;">Character Details</span>
-            <span class="panel-drag-handle">&#8942;&#8942;</span>
-            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;margin-left:6px;">&#8722;</button>
-          </div>
-          <div class="card-body">
-            <div class="stat-grid">
-              <div class="stat"><span class="stat-label">Location</span><span class="stat-value-sm zone-value">${location}</span></div>
-              <div class="stat"><span class="stat-label">Time Played</span><span class="stat-value-sm played-value">${formatPlayedTime(c.playedTotal)}</span></div>
-              <div class="stat"><span class="stat-label">Profession 1</span><span class="stat-value-sm prof-value">${prof1}</span></div>
-              <div class="stat"><span class="stat-label">Profession 2</span><span class="stat-value-sm prof-value">${prof2}</span></div>
-              <div class="stat"><span class="stat-label">Mounts</span><span class="stat-value-sm mount-value">${c.mountsCollected||0} / ${c.mountsTotal||0}</span></div>
-              <div class="stat"><span class="stat-label">Pets</span><span class="stat-value-sm mount-value">${c.petsOwned||0}</span></div>
-            </div>
-          </div>
-          <div class="section-title">Quality of Life</div>
-          <div class="card-body">
-            <div class="stat-grid">
-              <div class="stat">
-                <span class="stat-label">Bag Space</span>
-                <span class="stat-value-sm">${freeBags} free / ${totalBags}</span>
-                <div class="bag-bar"><div class="bag-bar-fill" style="width:${bagPct}%;background:${bagColor};"></div></div>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Rested XP</span>
-                ${isMax ? '<span class="stat-value-sm" style="color:#3a3530;">Max Level</span>'
-                  : `<span class="stat-value-sm" style="color:#a335ee;">${restedPct}%</span>
-                     <div class="rested-bar"><div class="rested-bar-fill" style="width:${Math.min(restedPct,100)}%;"></div></div>`}
-              </div>
-            </div>
-          </div>
-          <div class="card-footer">${c.realm} &middot; Updated: ${c.lastUpdated||'Unknown'}</div>
-        </div>`;
     }
 
     // ── Tracker ──
@@ -1110,18 +1087,26 @@
 
       // AI-powered advice section
       let aiSection = '';
+      let ruleBasedContent = `<div class="advice-nextup">${adv.nextUp || ''}</div>${tips}${ilvlTip}${crestAdvice}`;
+
       if (aiAdviceLoading) {
         aiSection = `<div style="padding:10px 0;text-align:center;color:#5a5545;font-size:12px;">
           <span style="color:#3fc7eb;">&#9881;</span> Claude is analyzing your character...</div>`;
       } else if (aiAdvice) {
-        // Convert markdown-ish bold to HTML
         const formatted = aiAdvice.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
-        aiSection = `<div style="border-top:1px solid #2a2235;padding-top:10px;margin-top:8px;">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#3fc7eb;margin-bottom:6px;">
-            AI Advisor <span style="font-size:8px;color:#4a4038;font-weight:400;letter-spacing:0;">powered by Claude</span>
-          </div>
-          <div style="font-size:12px;color:#c8c0b0;line-height:1.6;white-space:pre-line;">${formatted}</div>
-        </div>`;
+        aiSection = `
+          <div style="border-top:1px solid #2a2235;padding-top:10px;margin-top:8px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#3fc7eb;margin-bottom:8px;">
+              AI Advisor <span style="font-size:8px;color:#4a4038;font-weight:400;">powered by Claude</span>
+            </div>
+            <div style="font-size:12px;color:#c8c0b0;line-height:1.7;white-space:pre-line;">${formatted}</div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button onclick="fetchAIAdvice()" style="background:none;border:1px solid #3fc7eb;border-radius:4px;color:#3fc7eb;cursor:pointer;font-size:10px;padding:4px 10px;">Refresh AI</button>
+              <button onclick="aiAdvice=null;renderAdvice();" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:10px;padding:4px 10px;">Show rule-based tips</button>
+            </div>
+          </div>`;
+        // When AI advice is showing, hide rule-based tips
+        ruleBasedContent = '';
       } else {
         aiSection = `<div style="border-top:1px solid #2a2235;padding-top:8px;margin-top:8px;text-align:center;">
           <button onclick="fetchAIAdvice()" style="background:linear-gradient(135deg,#3fc7eb,#1a9fd4);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity 0.15s;">
@@ -1137,8 +1122,7 @@
             <h3><span class="panel-drag-handle">&#8942;&#8942;</span> Smart Recommendations</h3>
             <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
           </div>
-          <div class="advice-nextup">${adv.nextUp || ''}</div>
-          ${tips}${ilvlTip}${crestAdvice}
+          ${ruleBasedContent}
           ${aiSection}
         </div>`;
     }
