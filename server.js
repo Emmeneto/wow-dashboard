@@ -16,11 +16,18 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// ── Paths (auto-detect WoW install location) ──
+// ── Mode Detection ──
+// HOSTED mode: runs on a server (Railway/Render), receives data via upload API
+// LOCAL mode: runs on user's PC, reads SavedVariables from disk
+const MODE = process.env.MODE || "local";
+const IS_HOSTED = MODE === "hosted";
+
+// ── Paths ──
 
 function findWoWPath() {
   const common = [
@@ -34,19 +41,46 @@ function findWoWPath() {
   for (const p of common) {
     if (p && fs.existsSync(path.join(p, "WTF"))) return p;
   }
-  // Fallback
-  return "C:/Program Files (x86)/World of Warcraft/_retail_";
+  return null;
 }
 
-const WOW_ROOT = findWoWPath();
-const WOW_BASE = path.join(WOW_ROOT, "WTF");
+const WOW_ROOT = IS_HOSTED ? null : findWoWPath();
+const WOW_BASE = WOW_ROOT ? path.join(WOW_ROOT, "WTF") : null;
 const SAVED_VARS_FILENAME = "WoWDashboard.lua";
 const TRACKER_FILE = path.join(__dirname, "weekly-tracker.json");
-const ADDON_DIR = path.join(WOW_ROOT, "Interface/AddOns/WoWDashboard");
-const ADVICE_FILE = path.join(ADDON_DIR, "WoWDashboard_Advice.lua");
+const DATA_DIR = path.join(__dirname, "data");
+const UPLOADS_FILE = path.join(DATA_DIR, "uploaded-characters.json");
+const ADDON_DIR = WOW_ROOT ? path.join(WOW_ROOT, "Interface/AddOns/WoWDashboard") : null;
+const ADVICE_FILE = ADDON_DIR ? path.join(ADDON_DIR, "WoWDashboard_Advice.lua") : null;
 
-app.use(express.json());
+// Ensure data directory exists for hosted mode
+if (IS_HOSTED && !fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+app.use(express.json({ limit: "5mb" }));
 app.use(express.static(path.join(__dirname, "public")));
+
+// ── Uploaded Data Store (hosted mode) ──
+
+function loadUploadedData() {
+  try {
+    if (fs.existsSync(UPLOADS_FILE)) {
+      return JSON.parse(fs.readFileSync(UPLOADS_FILE, "utf-8"));
+    }
+  } catch (err) {
+    console.error("Error loading uploaded data:", err.message);
+  }
+  return { users: {}, characters: {} };
+}
+
+function saveUploadedData(data) {
+  try {
+    fs.writeFileSync(UPLOADS_FILE, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error("Error saving uploaded data:", err.message);
+  }
+}
 
 // ── Helpers ──
 
@@ -427,28 +461,115 @@ function writeAdviceFile(advice) {
  * GET /api/characters - Return all character data and regenerate advice.
  */
 app.get("/api/characters", (req, res) => {
-  const files = findSavedVariablesFiles();
   let allCharacters = {};
 
-  for (const filePath of files) {
+  if (IS_HOSTED) {
+    // Hosted mode: read from uploaded data store
+    const uploaded = loadUploadedData();
+    // Optional: filter by user key if provided
+    const userKey = req.query.user;
+    if (userKey && uploaded.users[userKey]) {
+      const charKeys = uploaded.users[userKey].characters || [];
+      charKeys.forEach(ck => {
+        if (uploaded.characters[ck]) allCharacters[ck] = uploaded.characters[ck];
+      });
+    } else {
+      // Return all characters (for browsing)
+      allCharacters = uploaded.characters || {};
+    }
+  } else {
+    // Local mode: read from SavedVariables on disk
+    const files = findSavedVariablesFiles();
+    for (const filePath of files) {
+      try {
+        const lua = fs.readFileSync(filePath, "utf-8");
+        const characters = parseLuaTable(lua);
+        Object.assign(allCharacters, characters);
+      } catch (err) {
+        console.error(`Error reading ${filePath}:`, err.message);
+      }
+    }
+
+    // Generate and write advice file for in-game addon (local only)
     try {
-      const lua = fs.readFileSync(filePath, "utf-8");
-      const characters = parseLuaTable(lua);
-      Object.assign(allCharacters, characters);
+      const advice = generateAdvice(allCharacters);
+      writeAdviceFile(advice);
     } catch (err) {
-      console.error(`Error reading ${filePath}:`, err.message);
+      console.error("Error generating advice:", err.message);
     }
   }
 
-  // Generate and write advice file for in-game addon
-  try {
-    const advice = generateAdvice(allCharacters);
-    writeAdviceFile(advice);
-  } catch (err) {
-    console.error("Error generating advice:", err.message);
+  res.json(allCharacters);
+});
+
+// ── Upload Endpoint (hosted mode) ──
+
+/**
+ * POST /api/upload - Upload character data from a companion app.
+ * Body: { userKey: "abc123", characters: { "Name-Realm": { ...data } } }
+ * Each user gets a unique key they generate locally (no auth needed for beta).
+ */
+app.post("/api/upload", (req, res) => {
+  const { userKey, characters } = req.body;
+
+  if (!userKey || !characters || typeof characters !== "object") {
+    return res.status(400).json({ error: "userKey and characters object required" });
   }
 
-  res.json(allCharacters);
+  const data = loadUploadedData();
+
+  // Register user if new
+  if (!data.users[userKey]) {
+    data.users[userKey] = {
+      firstSeen: new Date().toISOString(),
+      characters: [],
+    };
+  }
+  data.users[userKey].lastUpload = new Date().toISOString();
+
+  // Merge character data
+  const charKeys = Object.keys(characters);
+  for (const ck of charKeys) {
+    if (!ck.includes("-")) continue; // skip non-character keys
+    data.characters[ck] = {
+      ...characters[ck],
+      _uploadedBy: userKey,
+      _uploadedAt: new Date().toISOString(),
+    };
+    if (!data.users[userKey].characters.includes(ck)) {
+      data.users[userKey].characters.push(ck);
+    }
+  }
+
+  saveUploadedData(data);
+
+  console.log(`Upload from ${userKey}: ${charKeys.length} characters`);
+  res.json({
+    success: true,
+    characters: charKeys.length,
+    message: `Uploaded ${charKeys.length} character(s) successfully`,
+  });
+});
+
+/**
+ * GET /api/users - List all users who have uploaded data (hosted mode).
+ */
+app.get("/api/users", (req, res) => {
+  if (!IS_HOSTED) return res.json({ mode: "local", users: [] });
+  const data = loadUploadedData();
+  const users = Object.entries(data.users).map(([key, info]) => ({
+    userKey: key,
+    characters: info.characters,
+    lastUpload: info.lastUpload,
+  }));
+  res.json({ users });
+});
+
+/**
+ * GET /api/mode - Return current server mode.
+ */
+app.get("/api/mode", (req, res) => {
+  res.json({ mode: MODE, hosted: IS_HOSTED });
 });
 
 /**
@@ -484,18 +605,25 @@ app.get("/api/debug", (req, res) => {
  * GET /api/advice - Generate and return advice for all characters.
  */
 app.get("/api/advice", (req, res) => {
-  const files = findSavedVariablesFiles();
   let allCharacters = {};
-  for (const filePath of files) {
-    try {
-      const lua = fs.readFileSync(filePath, "utf-8");
-      Object.assign(allCharacters, parseLuaTable(lua));
-    } catch (err) {
-      console.error(`Error reading ${filePath}:`, err.message);
+
+  if (IS_HOSTED) {
+    const uploaded = loadUploadedData();
+    allCharacters = uploaded.characters || {};
+  } else {
+    const files = findSavedVariablesFiles();
+    for (const filePath of files) {
+      try {
+        const lua = fs.readFileSync(filePath, "utf-8");
+        Object.assign(allCharacters, parseLuaTable(lua));
+      } catch (err) {
+        console.error(`Error reading ${filePath}:`, err.message);
+      }
     }
   }
+
   const advice = generateAdvice(allCharacters);
-  writeAdviceFile(advice);
+  if (!IS_HOSTED) writeAdviceFile(advice);
   res.json(advice);
 });
 
@@ -561,6 +689,12 @@ app.post("/api/tracker/:charKey", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`WoW Dashboard running at http://localhost:${PORT}`);
-  console.log("Scanning for SavedVariables in:", WOW_BASE);
+  console.log(`Mode: ${MODE.toUpperCase()}`);
+  if (IS_HOSTED) {
+    console.log("Hosted mode: accepting uploads via POST /api/upload");
+    console.log("Data stored at:", UPLOADS_FILE);
+  } else {
+    console.log("Local mode: reading SavedVariables from:", WOW_BASE);
+  }
   console.log("Current week key:", getWeekKey());
 });
