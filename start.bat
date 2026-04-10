@@ -22,10 +22,15 @@ if not exist "node_modules" (
     echo.
 )
 
-echo Starting WoW Dashboard server...
-echo Dashboard will be available at: http://localhost:3000
+:: Upload character data to the hosted dashboard
+echo Uploading character data to hosted dashboard...
+node upload.js
 echo.
-echo Press Ctrl+C to stop the server.
+
+echo Starting local dashboard server...
+echo Local dashboard: http://localhost:3000
+echo.
+echo Press Ctrl+C to stop.
 echo ========================================
 echo.
 

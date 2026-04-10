@@ -566,6 +566,7 @@
     <p class="subtitle">Midnight Season 1 Gearing Companion</p>
     <div class="reset-banner" id="resetBanner"></div>
 
+    <div id="landing"></div>
     <div class="char-tiles" id="charTiles"></div>
 
     <div class="main-content">
@@ -686,10 +687,16 @@
       return { done, total, pct: Math.round((done/total)*100) };
     }
 
+    // ── User Key (from URL param or local storage) ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const userKey = urlParams.get('user') || localStorage.getItem('wowdash_userKey') || '';
+    if (userKey) localStorage.setItem('wowdash_userKey', userKey);
+
     // ── Data Fetching ──
     async function fetchCharacters() {
       try {
-        const res = await fetch('/api/characters');
+        const url = userKey ? `/api/characters?user=${encodeURIComponent(userKey)}` : '/api/characters';
+        const res = await fetch(url);
         characters = await res.json();
         renderTiles();
         renderDashboard();
@@ -735,8 +742,37 @@
     // ── Character Tiles ──
     function renderTiles() {
       const el = document.getElementById('charTiles');
+      const landing = document.getElementById('landing');
       const keys = Object.keys(characters).filter(k => characters[k].name);
-      if (keys.length === 0) { el.innerHTML = ''; return; }
+
+      if (keys.length === 0) {
+        el.innerHTML = '';
+        landing.innerHTML = `
+          <div class="card" style="padding:30px;text-align:center;margin-bottom:20px;">
+            <h2 style="font-family:'Cinzel',serif;color:#ffd700;font-size:20px;margin-bottom:12px;">Welcome to WoW Dashboard</h2>
+            <p style="color:#8a7e6a;margin-bottom:20px;line-height:1.6;">No character data found yet. Follow these steps to get started:</p>
+            <div style="text-align:left;max-width:500px;margin:0 auto;font-size:13px;color:#c8c0b0;line-height:2;">
+              <p><span style="color:#ffd700;font-weight:700;">1.</span> Download the addon from <a href="https://github.com/Emmeneto/wow-dashboard" target="_blank" style="color:#3fc7eb;">GitHub</a></p>
+              <p><span style="color:#ffd700;font-weight:700;">2.</span> Copy the <code style="background:#1a1528;padding:2px 6px;border-radius:3px;">addon/WoWDashboard/</code> folder into your <code style="background:#1a1528;padding:2px 6px;border-radius:3px;">Interface/AddOns/</code></p>
+              <p><span style="color:#ffd700;font-weight:700;">3.</span> Log into WoW and type <code style="background:#1a1528;padding:2px 6px;border-radius:3px;">/reload</code></p>
+              <p><span style="color:#ffd700;font-weight:700;">4.</span> Run <code style="background:#1a1528;padding:2px 6px;border-radius:3px;">start.bat</code> from the companion folder</p>
+              <p><span style="color:#ffd700;font-weight:700;">5.</span> Your characters will appear here automatically!</p>
+            </div>
+            ${userKey ? `<p style="margin-top:16px;font-size:11px;color:#4a4038;">Your user key: <code style="background:#1a1528;padding:2px 6px;border-radius:3px;color:#ffd700;">${userKey}</code></p>` : `
+              <div style="margin-top:20px;padding-top:16px;border-top:1px solid #2a2235;">
+                <p style="color:#5a5545;font-size:11px;margin-bottom:8px;">Already uploaded? Enter your user key:</p>
+                <div style="display:flex;gap:8px;justify-content:center;">
+                  <input id="userKeyInput" type="text" placeholder="your-user-key" style="background:#1a1528;border:1px solid #2a2235;border-radius:6px;padding:8px 12px;color:#c8c0b0;font-size:13px;width:200px;outline:none;">
+                  <button onclick="const k=document.getElementById('userKeyInput').value.trim();if(k){window.location.href='?user='+encodeURIComponent(k);}" style="background:#ffd700;color:#1a0e00;border:none;border-radius:6px;padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;">Load</button>
+                </div>
+              </div>
+            `}
+          </div>`;
+        return;
+      }
+
+      landing.innerHTML = '';
+      if (!selectedKey || !keys.includes(selectedKey)) selectedKey = keys[0];
       if (!selectedKey || !keys.includes(selectedKey)) selectedKey = keys[0];
 
       el.innerHTML = keys.map(key => {
