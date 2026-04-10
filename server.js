@@ -57,6 +57,7 @@ const SAVED_VARS_FILENAME = "WoWDashboard.lua";
 const TRACKER_FILE = path.join(__dirname, "weekly-tracker.json");
 const DATA_DIR = path.join(__dirname, "data");
 const UPLOADS_FILE = path.join(DATA_DIR, "uploaded-characters.json");
+const CHAT_LOG_FILE = path.join(DATA_DIR, "chat-log.json");
 const ADDON_DIR = WOW_ROOT ? path.join(WOW_ROOT, "Interface/AddOns/WoWDashboard") : null;
 const ADVICE_FILE = ADDON_DIR ? path.join(ADDON_DIR, "WoWDashboard_Advice.lua") : null;
 
@@ -86,6 +87,27 @@ function saveUploadedData(data) {
     fs.writeFileSync(UPLOADS_FILE, JSON.stringify(data, null, 2));
   } catch (err) {
     console.error("Error saving uploaded data:", err.message);
+  }
+}
+
+// ── Conversation Logging ──
+
+function logConversation(entry) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    let logs = [];
+    if (fs.existsSync(CHAT_LOG_FILE)) {
+      try { logs = JSON.parse(fs.readFileSync(CHAT_LOG_FILE, "utf-8")); } catch(e) { logs = []; }
+    }
+    logs.push({
+      ...entry,
+      timestamp: new Date().toISOString(),
+    });
+    // Keep last 1000 entries
+    if (logs.length > 1000) logs = logs.slice(-1000);
+    fs.writeFileSync(CHAT_LOG_FILE, JSON.stringify(logs, null, 2));
+  } catch (err) {
+    console.error("Log error:", err.message);
   }
 }
 
@@ -725,6 +747,16 @@ Give specific advice like "Run Voidspire boss 3 for your BiS legs" not generic t
     });
 
     const adviceText = response.content[0]?.text || "";
+
+    logConversation({
+      type: 'smart-advice',
+      userKey,
+      character: character.name + '-' + character.realm,
+      ilvl: character.ilvl,
+      spec: (character.spec || '') + ' ' + (character.class || ''),
+      response: adviceText.substring(0, 500),
+    });
+
     res.json({ advice: adviceText });
   } catch (err) {
     console.error("Claude API error:", err.message);
@@ -791,11 +823,35 @@ Be concise (2-3 sentences per response). Ask follow-up questions about their ava
     });
 
     const reply = response.content[0]?.text || "";
+
+    logConversation({
+      type: 'chat',
+      userKey,
+      character: character.name + '-' + character.realm,
+      message: message.substring(0, 200),
+      reply: reply.substring(0, 500),
+    });
+
     res.json({ reply });
   } catch (err) {
     console.error("Chat error:", err.message);
     res.json({ reply: null, error: err.message });
   }
+});
+
+/**
+ * GET /api/logs - View conversation logs (localhost only).
+ */
+app.get("/api/logs", (req, res) => {
+  const isLocal = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+  if (!isLocal) return res.status(403).json({ error: "Logs only accessible from localhost" });
+  try {
+    if (fs.existsSync(CHAT_LOG_FILE)) {
+      res.json(JSON.parse(fs.readFileSync(CHAT_LOG_FILE, "utf-8")));
+    } else {
+      res.json([]);
+    }
+  } catch (err) { res.json([]); }
 });
 
 /**

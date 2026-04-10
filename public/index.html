@@ -1090,6 +1090,7 @@
     let adviceData = {};
     let aiAdvice = null;
     let aiAdviceLoading = false;
+    let inlineChatHistory = [];
 
     async function fetchAdvice() {
       try { const r = await fetch('/api/advice'); adviceData = await r.json(); renderAdvice(); }
@@ -1097,6 +1098,7 @@
     }
 
     async function fetchAIAdvice() {
+      inlineChatHistory = [];
       const c = characters[selectedKey];
       if (!c || c.level < 90 || aiAdviceLoading) return;
       aiAdviceLoading = true;
@@ -1113,6 +1115,58 @@
       aiAdviceLoading = false;
       renderAdvice();
     }
+
+    async function sendInlineChat() {
+      const input = document.getElementById('inlineChatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = '';
+
+      const messagesEl = document.getElementById('inlineChatMessages');
+      messagesEl.innerHTML += `<div style="align-self:flex-end;background:#1a3a5c;color:#c8c0b0;padding:6px 10px;border-radius:8px;border-bottom-right-radius:3px;font-size:11px;max-width:80%;">${msg}</div>`;
+      messagesEl.innerHTML += `<div id="inlineThinking" style="align-self:flex-start;color:#4a4038;font-size:10px;font-style:italic;">Thinking...</div>`;
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      inlineChatHistory.push({ role: 'user', content: msg });
+
+      const c = characters[selectedKey];
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: msg,
+            character: c,
+            bisData,
+            chatHistory: [
+              { role: 'assistant', content: aiAdvice || '' },
+              ...inlineChatHistory.slice(-8)
+            ],
+            userKey: localStorage.getItem('wowdash_userKey') || 'local',
+          }),
+        });
+        const data = await res.json();
+
+        const thinking = document.getElementById('inlineThinking');
+        if (thinking) thinking.remove();
+
+        if (data.reply) {
+          const fmt = data.reply.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
+          messagesEl.innerHTML += `<div style="align-self:flex-start;background:#1a1528;border:1px solid #2a2235;color:#c8c0b0;padding:6px 10px;border-radius:8px;border-bottom-left-radius:3px;font-size:11px;max-width:85%;line-height:1.5;">${fmt}</div>`;
+          inlineChatHistory.push({ role: 'assistant', content: data.reply });
+        } else if (data.rateLimited) {
+          messagesEl.innerHTML += `<div style="align-self:center;color:#e74c3c;font-size:10px;">${data.error}</div>`;
+        } else {
+          messagesEl.innerHTML += `<div style="align-self:center;color:#4a4038;font-size:10px;">Could not get response.</div>`;
+        }
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      } catch (err) {
+        const thinking = document.getElementById('inlineThinking');
+        if (thinking) thinking.remove();
+        messagesEl.innerHTML += `<div style="align-self:center;color:#4a4038;font-size:10px;">Connection error.</div>`;
+      }
+    }
+
     function renderAdvice() {
       const el = document.getElementById('advice');
       const c = characters[selectedKey];
@@ -1210,13 +1264,25 @@
         const formatted = aiAdvice.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffd700;">$1</strong>');
         aiSection = `
           <div style="border-top:1px solid #2a2235;padding-top:10px;margin-top:8px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#3fc7eb;margin-bottom:8px;">
-              AI Advisor <span style="font-size:8px;color:#4a4038;font-weight:400;">powered by Claude</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#3fc7eb;">
+                AI Advisor <span style="font-size:8px;color:#4a4038;font-weight:400;">powered by Claude</span>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button onclick="fetchAIAdvice()" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#3fc7eb;cursor:pointer;font-size:10px;padding:3px 8px;">&#8635; Refresh</button>
+                <button onclick="aiAdvice=null;inlineChatHistory=[];renderAdvice();" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:10px;padding:3px 8px;">Rule-based</button>
+              </div>
             </div>
-            <div style="font-size:12px;color:#c8c0b0;line-height:1.7;white-space:pre-line;">${formatted}</div>
-            <div style="display:flex;gap:8px;margin-top:10px;">
-              <button onclick="fetchAIAdvice()" style="background:none;border:1px solid #3fc7eb;border-radius:4px;color:#3fc7eb;cursor:pointer;font-size:10px;padding:4px 10px;">Refresh AI</button>
-              <button onclick="aiAdvice=null;renderAdvice();" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:10px;padding:4px 10px;">Show rule-based tips</button>
+            <div style="font-size:12px;color:#c8c0b0;line-height:1.7;white-space:pre-line;margin-bottom:12px;">${formatted}</div>
+
+            <div id="inlineChat">
+              <div id="inlineChatMessages" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+              <div style="display:flex;gap:6px;">
+                <input id="inlineChatInput" type="text" placeholder="Ask a follow-up... (e.g. I have 30 minutes, what should I do?)"
+                  style="flex:1;background:#1a1528;border:1px solid #2a2235;border-radius:6px;padding:8px 12px;color:#c8c0b0;font-size:11px;outline:none;font-family:inherit;"
+                  onkeydown="if(event.key==='Enter')sendInlineChat()">
+                <button onclick="sendInlineChat()" style="background:linear-gradient(135deg,#3fc7eb,#1a9fd4);border:none;border-radius:6px;padding:8px 12px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">Ask Claude</button>
+              </div>
             </div>
           </div>`;
         // When AI advice is showing, hide rule-based tips
