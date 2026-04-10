@@ -223,6 +223,9 @@
       }
       .main-content .tracker-card { grid-column: 1 / -1; }
       .main-content .bis-card { grid-column: 1 / -1; }
+      .card, .advice-card {
+        min-height: 320px;
+      }
     }
 
     /* ── Cards ── */
@@ -508,6 +511,11 @@
       background: rgba(138,126,106,0.12); padding: 1px 5px;
       border-radius: 3px; letter-spacing: 0.5px;
     }
+    .bis-badge {
+      font-size: 8px; font-weight: 700; color: #ffd700;
+      background: rgba(255, 215, 0, 0.12); padding: 1px 5px;
+      border-radius: 3px; letter-spacing: 0.5px;
+    }
     .status-badge {
       font-size: 7px; font-weight: 700; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px;
     }
@@ -558,6 +566,43 @@
       font-size: 10px; color: #4a4038; display: flex; flex-direction: column; gap: 3px;
     }
     .bis-footer strong { color: #ffd700; }
+
+    /* ── Crest Tracker ── */
+    .crest-card {
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(255, 170, 0, 0.3);
+      border-radius: 8px; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      grid-column: 1 / -1;
+    }
+    .crest-header {
+      padding: 14px 18px; border-bottom: 1px solid #2a2235;
+      background: linear-gradient(180deg, rgba(255,170,0,0.05) 0%, transparent 100%);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .crest-header h2 { font-size: 15px; font-weight: 700; color: #f39c12; font-family: 'Cinzel', serif; letter-spacing: 1px; }
+    .crest-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 14px 18px;
+    }
+    @media (max-width: 760px) { .crest-grid { grid-template-columns: repeat(2, 1fr); } }
+    .crest-tier {
+      padding: 12px; border-radius: 6px; border: 1px solid #2a2235; background: #12101e;
+      text-align: center;
+    }
+    .crest-tier-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .crest-tier-count { font-size: 20px; font-weight: 700; font-family: 'Cinzel', serif; }
+    .crest-tier-cap { font-size: 10px; color: #4a4038; margin-top: 2px; }
+    .crest-tier-bar { height: 4px; background: #1a1528; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .crest-tier-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+    .crest-sources { padding: 10px 18px; border-top: 1px solid #2a2235; font-size: 10px; color: #4a4038; }
+    .crest-sources strong { color: #f39c12; }
+
+    .crest-adventurer { color: #1eff00; }
+    .crest-veteran { color: #0070dd; }
+    .crest-champion { color: #a335ee; }
+    .crest-hero { color: #ff8000; }
+    .crest-myth { color: #e6cc80; }
   </style>
 </head>
 <body>
@@ -574,6 +619,7 @@
       <div id="advice"></div>
       <div id="tracker"></div>
       <div id="bis"></div>
+      <div id="crests"></div>
     </div>
   </div>
 
@@ -709,6 +755,7 @@
           document.getElementById('tracker').innerHTML = '';
           document.getElementById('advice').innerHTML = '';
           document.getElementById('bis').innerHTML = '';
+          document.getElementById('crests').innerHTML = '';
         }
       } catch (err) { console.error('Failed to fetch:', err); }
     }
@@ -820,7 +867,7 @@
           updateResetBanner();
           const c = characters[selectedKey];
           if (c && c.level >= 90) { await fetchTracker(); fetchAdvice(); fetchBiS(); }
-          else { document.getElementById('tracker').innerHTML = ''; document.getElementById('advice').innerHTML = ''; document.getElementById('bis').innerHTML = ''; }
+          else { document.getElementById('tracker').innerHTML = ''; document.getElementById('advice').innerHTML = ''; document.getElementById('bis').innerHTML = ''; document.getElementById('crests').innerHTML = ''; }
         });
       });
     }
@@ -1075,6 +1122,7 @@
         if (res.ok) {
           bisData = await res.json();
           renderBiS();
+          renderCrests();
           // Re-render advice now that BiS data is available (for crest tips)
           renderAdvice();
         }
@@ -1139,6 +1187,7 @@
         };
         const st = statusMap[status];
         const tierBadge = bis.isTier ? '<span class="tier-badge">TIER</span>' : '';
+        const bisBadge = (status === 'perfect' || status === 'upgrading') ? '<span class="bis-badge">BiS</span>' : '';
         const statusBadge = st.label ? `<span class="status-badge ${st.cls}">${st.label}</span>` : '';
 
         const ilvlDiff = bis.bisIlvl - curIlvl;
@@ -1156,7 +1205,7 @@
               <div class="bis-slot-ilvl">${ilvlHtml}</div>
             </div>
             <div class="bis-slot-right">
-              ${tierBadge}${statusBadge}
+              ${tierBadge}${bisBadge}${statusBadge}
             </div>
           </div>`;
       }
@@ -1281,6 +1330,44 @@
               ${bis.tierAlt?`<div class="bis-detail-row"><span class="bis-detail-key">Tier Alt</span><span>${bis.tierAlt}</span></div>`:''}
               ${wowheadLink?`<div class="bis-detail-row">${wowheadLink}</div>`:''}
             </div>
+          </div>
+        </div>`;
+    }
+
+    // ── Crest Tracker ──
+    function renderCrests() {
+      const el = document.getElementById('crests');
+      const c = characters[selectedKey];
+      if (!c || c.level < 90) { el.innerHTML = ''; return; }
+
+      const tiers = [
+        { name: 'Adventurer', css: 'crest-adventurer', color: '#1eff00', ilvl: '220-237', sources: 'LFR, Heroic dungeons, Delve T4, outdoor events' },
+        { name: 'Veteran', css: 'crest-veteran', color: '#0070dd', ilvl: '233-250', sources: 'LFR, Heroic Season dungeons, Delve T5-6, Hard Prey hunts' },
+        { name: 'Champion', css: 'crest-champion', color: '#a335ee', ilvl: '246-263', sources: 'M+ 2-3, Normal raid, Delve T7-10, weekly events' },
+        { name: 'Hero', css: 'crest-hero', color: '#ff8000', ilvl: '259-276', sources: 'M+ 4-8, Heroic raid, Bounty Delve T8+' },
+        { name: 'Myth', css: 'crest-myth', color: '#e6cc80', ilvl: '272-289', sources: 'M+ 9+, Mythic raid' },
+      ];
+
+      const tiersHtml = tiers.map(t => `
+        <div class="crest-tier">
+          <div class="crest-tier-name ${t.css}">${t.name}</div>
+          <div class="crest-tier-count" style="color:${t.color}">-</div>
+          <div class="crest-tier-cap">/ 100 weekly cap</div>
+          <div class="crest-tier-bar"><div class="crest-tier-fill" style="width:0%;background:${t.color};"></div></div>
+          <div style="font-size:9px;color:#4a4038;margin-top:6px;">${t.ilvl}</div>
+        </div>`).join('');
+
+      el.innerHTML = `
+        <div class="crest-card">
+          <div class="crest-header">
+            <h2>Dawncrest Tracker</h2>
+            <span style="font-size:10px;color:#4a4038;">20 crests per upgrade rank &middot; 100 weekly cap</span>
+          </div>
+          <div class="crest-grid">${tiersHtml}</div>
+          <div class="crest-sources">
+            <strong>Upgrade cost:</strong> 120 crests to fully upgrade one item (6 ranks x 20 each)<br>
+            <strong>Conversion:</strong> Higher to lower 1:1 &middot; Lower to higher 3:1 (requires gear milestone)<br>
+            <strong>Best farming:</strong> Veteran = Hard Prey hunts &middot; Champion = Delve T7-10 &middot; Hero = M+ 4-8 &middot; Myth = M+ 9+
           </div>
         </div>`;
     }
