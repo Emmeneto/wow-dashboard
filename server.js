@@ -669,18 +669,150 @@ app.get("/api/advice", (req, res) => {
   res.json(advice);
 });
 
-// Get BiS data for a spec
-app.get("/api/bis/:spec", (req, res) => {
-  const spec = req.params.spec;
+// ── Auto-generating BiS Data ──
+const BIS_FILE = path.join(__dirname, "bis-data.json");
+const bisGenerating = {}; // track in-progress generations to avoid duplicates
+
+function loadBisData() {
   try {
-    const bisData = JSON.parse(fs.readFileSync(path.join(__dirname, "bis-data.json"), "utf-8"));
-    if (bisData[spec]) {
-      res.json(bisData[spec]);
-    } else {
-      res.status(404).json({ error: "Spec not found", available: Object.keys(bisData) });
-    }
+    if (fs.existsSync(BIS_FILE)) return JSON.parse(fs.readFileSync(BIS_FILE, "utf-8"));
+  } catch (e) {}
+  return {};
+}
+
+function saveBisData(data) {
+  fs.writeFileSync(BIS_FILE, JSON.stringify(data, null, 2));
+}
+
+async function generateBisForSpec(specKey) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+  if (bisGenerating[specKey]) return null; // already generating
+
+  bisGenerating[specKey] = true;
+  console.log(`Generating BiS data for ${specKey}...`);
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const [spec, ...classParts] = specKey.split("-");
+    const className = classParts.join(" ");
+    const specName = spec.charAt(0).toUpperCase() + spec.slice(1);
+    const classNameCap = className.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4000,
+      messages: [{
+        role: "user",
+        content: `You are a World of Warcraft: Midnight Season 1 gearing expert. Generate the Best-in-Slot gear list for ${specName} ${classNameCap} (PvE, raid/M+ focused).
+
+Return ONLY valid JSON with no markdown, no code blocks, no explanation. The JSON must match this exact structure:
+
+{
+  "specName": "${specName} ${classNameCap}",
+  "tierSet": {
+    "name": "TIER_SET_NAME",
+    "bonus2pc": "2pc bonus description",
+    "bonus4pc": "4pc bonus description",
+    "slots": [1, 5, 10, 7],
+    "flexSlot": 3
+  },
+  "statPriority": "STAT >= STAT >> STAT >= STAT",
+  "upgradePriority": "Weapon > Trinkets > Helm/Chest/Legs > ...",
+  "embellishments": "EMBELLISHMENT_1 + EMBELLISHMENT_2",
+  "craftPriority": "1. ITEM > 2. ITEM > 3. ITEM",
+  "slots": {
+    "1": {"slotName":"Head","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"BOSS/DUNGEON","sourceType":"raid","isTier":true,"notes":"WHY_BIS","usage":80,"wowheadUrl":""},
+    "2": {"slotName":"Neck","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":false,"notes":"WHY_BIS","usage":50,"wowheadUrl":""},
+    "3": {"slotName":"Shoulder","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":272,"source":"SOURCE","sourceType":"mythicplus","isTier":false,"notes":"WHY_BIS","usage":40,"wowheadUrl":""},
+    "5": {"slotName":"Chest","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":true,"notes":"WHY_BIS","usage":90,"wowheadUrl":""},
+    "6": {"slotName":"Waist","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":false,"notes":"WHY_BIS","usage":45,"wowheadUrl":""},
+    "7": {"slotName":"Legs","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":true,"notes":"WHY_BIS","usage":90,"wowheadUrl":""},
+    "8": {"slotName":"Feet","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":false,"notes":"WHY_BIS","usage":45,"wowheadUrl":""},
+    "9": {"slotName":"Wrist","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":272,"source":"SOURCE","sourceType":"crafted","isTier":false,"notes":"WHY_BIS","usage":50,"wowheadUrl":""},
+    "10": {"slotName":"Hands","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":true,"notes":"WHY_BIS","usage":90,"wowheadUrl":""},
+    "11": {"slotName":"Ring 1","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":272,"source":"SOURCE","sourceType":"mythicplus","isTier":false,"notes":"WHY_BIS","usage":50,"wowheadUrl":""},
+    "12": {"slotName":"Ring 2","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":272,"source":"SOURCE","sourceType":"dungeon","isTier":false,"notes":"WHY_BIS","usage":35,"wowheadUrl":""},
+    "13": {"slotName":"Trinket 1","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":false,"notes":"WHY_BIS","usage":60,"wowheadUrl":""},
+    "14": {"slotName":"Trinket 2","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":282,"source":"SOURCE","sourceType":"raid","isTier":false,"notes":"WHY_BIS","usage":55,"wowheadUrl":""},
+    "15": {"slotName":"Back","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":272,"source":"SOURCE","sourceType":"crafted","isTier":false,"notes":"WHY_BIS","usage":30,"wowheadUrl":""},
+    "16": {"slotName":"Main Hand","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":272,"source":"SOURCE","sourceType":"crafted","isTier":false,"notes":"WHY_BIS","usage":90,"wowheadUrl":""},
+    "17": {"slotName":"Off Hand","bisName":"ITEM_NAME","bisItemID":0,"bisIlvl":0,"source":"N/A if using 2H","sourceType":"none","isTier":false,"notes":"NOTES","usage":0,"wowheadUrl":""}
+  }
+}
+
+Context: Midnight Season 1 raids are The Voidspire (6 bosses), Dreamrift (1 boss: Chimaerus), March on Quel'Danas (2 bosses). M+ pool includes Windrunner Spire, Murder Row, Den of Nalorakk, Maisara Caverns, Seat of the Triumvirate, Skyreach, Magister's Terrace, Pit of Saron. Max ilvl is 282 (Myth 6/6 raid) or 272 (M+ vault / crafted). Tier tokens are from Voidspire + Dreamrift + Quel'Danas.
+
+sourceType must be one of: "raid", "mythicplus", "crafted", "dungeon", "none".
+Set bisItemID to 0 (we don't have IDs).
+Fill in real item names, sources, and reasoning for ${specName} ${classNameCap}.
+Return ONLY the JSON object, nothing else.`
+      }],
+    });
+
+    const text = response.content[0]?.text || "";
+    // Parse JSON from response (handle potential markdown wrapping)
+    const jsonStr = text.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+    const bisResult = JSON.parse(jsonStr);
+
+    // Save to bis-data.json
+    const allBis = loadBisData();
+    allBis[specKey] = {
+      ...bisResult,
+      _generatedAt: new Date().toISOString(),
+      _generatedBy: "claude-auto",
+    };
+    saveBisData(allBis);
+
+    console.log(`BiS data generated and saved for ${specKey}`);
+    logConversation({
+      type: "bis-generation",
+      spec: specKey,
+      slotsGenerated: Object.keys(bisResult.slots || {}).length,
+    });
+
+    return bisResult;
   } catch (err) {
-    res.status(500).json({ error: "Failed to load BiS data" });
+    console.error(`Failed to generate BiS for ${specKey}:`, err.message);
+    return null;
+  } finally {
+    delete bisGenerating[specKey];
+  }
+}
+
+// Get BiS data for a spec — auto-generates if missing
+app.get("/api/bis/:spec", async (req, res) => {
+  const spec = req.params.spec;
+  const allBis = loadBisData();
+
+  // Check if we have cached data that's less than 7 days old
+  if (allBis[spec]) {
+    const generatedAt = allBis[spec]._generatedAt;
+    if (generatedAt) {
+      const ageMs = Date.now() - new Date(generatedAt).getTime();
+      const ageDays = ageMs / (1000 * 60 * 60 * 24);
+      if (ageDays < 7) {
+        return res.json(allBis[spec]);
+      }
+      // Stale — regenerate in background, serve cached for now
+      generateBisForSpec(spec);
+      return res.json(allBis[spec]);
+    }
+    return res.json(allBis[spec]);
+  }
+
+  // No cached data — try to generate
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.status(404).json({ error: "Spec not found and no API key to generate", available: Object.keys(allBis) });
+  }
+
+  // Generate on the fly
+  const result = await generateBisForSpec(spec);
+  if (result) {
+    res.json(result);
+  } else {
+    res.status(503).json({ error: "BiS data is being generated. Refresh in a few seconds.", generating: true });
   }
 });
 
