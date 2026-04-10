@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WoW Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: #0a0a12;
+      background-image:
+        radial-gradient(ellipse at 50% 0%, #1a1528 0%, #0a0a12 60%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,215,0,0.01) 2px, rgba(255,215,0,0.01) 4px);
+      color: #c8c0b0;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+
+    .page { max-width: 900px; margin: 0 auto; }
+
+    h1 {
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      color: #ffd700;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .subtitle {
+      text-align: center;
+      color: #5a5545;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .reset-banner {
+      text-align: center;
+      background: linear-gradient(135deg, #12101e 0%, #1a1528 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(255, 215, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #8a7e6a;
+    }
+    .reset-banner strong { color: #ffd700; font-weight: 600; }
+
+    /* ── Character Tiles ── */
+    .char-tiles {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .char-tile {
+      flex: 1 1 200px;
+      min-width: 160px;
+      max-width: 280px;
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .char-tile::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--class-color, #555);
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .char-tile:hover {
+      border-color: #3a3040;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+    .char-tile:hover::before { opacity: 1; }
+
+    .char-tile.selected {
+      border-color: #ffd700;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.15), 0 6px 20px rgba(0,0,0,0.4);
+    }
+    .char-tile.selected::before {
+      background: #ffd700;
+      opacity: 1;
+      height: 3px;
+    }
+
+    .tile-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .tile-portrait {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      border: 2px solid #2a2235;
+      background: #1a1528;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .tile-portrait img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    .tile-portrait .fallback-icon {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: 'Cinzel', serif;
+      color: var(--class-color, #888);
+    }
+    .tile-name-block { flex: 1; min-width: 0; }
+    .tile-name {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tile-subtitle {
+      font-size: 11px;
+      color: #5a5545;
+      margin-top: 1px;
+    }
+    .tile-realm {
+      font-size: 10px;
+      color: #3a3530;
+      margin-top: 1px;
+    }
+
+    .tile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .tile-stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .tile-stat-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #4a4038;
+      font-weight: 600;
+    }
+    .tile-stat-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .tile-ilvl { color: #a335ee; }
+    .tile-gold { color: #ffd700; }
+    .tile-level { color: #c8c0b0; }
+    .tile-spec { color: #8a7e6a; }
+
+    .tile-progress {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #2a2235;
+    }
+    .tile-progress-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #4a4038;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .tile-progress-bar {
+      height: 4px;
+      background: #1a1528;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .tile-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e74c3c, #f39c12, #2ecc71);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .tile-progress-text {
+      font-size: 11px;
+      color: #ffd700;
+      font-weight: 600;
+      margin-top: 3px;
+      text-align: right;
+    }
+
+    /* ── Main Content ── */
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 760px) {
+      .main-content {
+        grid-template-columns: 1fr 1fr;
+      }
+      .main-content .tracker-card { grid-column: 1 / -1; }
+      .main-content .bis-card { grid-column: 1 / -1; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(255, 215, 0, 0.15);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #ffd700;
+      padding: 12px 18px 6px;
+      border-top: 1px solid #2a2235;
+      font-family: 'Cinzel', serif;
+    }
+    .card-body { padding: 14px 18px; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label {
+      font-size: 9px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px; color: #4a4038;
+    }
+    .stat-value { font-size: 16px; font-weight: 600; }
+    .stat-value-sm { font-size: 13px; font-weight: 500; }
+
+    .gold-value { color: #ffd700; }
+    .gold-value .silver { color: #b0b0b0; font-size: 11px; }
+    .gold-value .copper { color: #b87333; font-size: 11px; }
+    .ilvl-value { color: #a335ee; }
+    .zone-value { color: #7ec8e3; }
+    .prof-value { color: #ff7c0a; }
+    .played-value { color: #aad372; }
+    .mount-value { color: #f48cba; }
+
+    .bag-bar, .rested-bar {
+      width: 100%; height: 4px; background: #1a1528;
+      border-radius: 2px; margin-top: 4px; overflow: hidden;
+    }
+    .bag-bar-fill, .rested-bar-fill {
+      height: 100%; border-radius: 2px; transition: width 0.4s ease;
+    }
+    .rested-bar-fill { background: linear-gradient(90deg, #a335ee, #c77dff); }
+
+    .card-footer {
+      padding: 12px 18px;
+      border-top: 1px solid #2a2235;
+      font-size: 10px; color: #3a3530; text-align: right;
+    }
+
+    /* ── Advice ── */
+    .advice-card {
+      background: linear-gradient(135deg, #14101e 0%, #1a1528 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(255, 215, 0, 0.3);
+      border-radius: 8px;
+      padding: 14px 18px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .advice-header h3 {
+      font-size: 10px; font-weight: 700; color: #ffd700;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      font-family: 'Cinzel', serif; margin-bottom: 8px;
+    }
+    .advice-nextup { font-size: 13px; color: #c8c0b0; line-height: 1.5; margin-bottom: 6px; }
+    .advice-tip {
+      font-size: 11px; color: #7ec8e3; padding: 6px 10px;
+      background: rgba(126,200,227,0.06); border-left: 2px solid rgba(126,200,227,0.3);
+      border-radius: 0 6px 6px 0; margin-top: 5px;
+    }
+    .advice-tip-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: #5a9db8; margin-bottom: 2px;
+    }
+
+    /* ── Tracker ── */
+    .tracker-card {
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(255, 215, 0, 0.15);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .tracker-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #2a2235;
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(180deg, rgba(255,215,0,0.03) 0%, transparent 100%);
+    }
+    .tracker-header h2 {
+      font-size: 15px; font-weight: 700; color: #ffd700;
+      font-family: 'Cinzel', serif; letter-spacing: 1px;
+    }
+    .tracker-header .week-label {
+      font-size: 10px; color: #5a5545;
+      background: #1a1528; padding: 3px 10px;
+      border-radius: 4px; border: 1px solid #2a2235;
+    }
+
+    .vault-section { padding: 14px 18px; border-bottom: 1px solid #2a2235; }
+    .vault-section:last-child { border-bottom: none; }
+
+    .vault-row-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; margin-bottom: 8px;
+    }
+    .vault-row-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px;
+    }
+    .vault-row-title.dungeons { color: #3fc7eb; }
+    .vault-row-title.raid { color: #e74c3c; }
+    .vault-row-title.world { color: #2ecc71; }
+    .vault-row-title.weekly { color: #f39c12; }
+    .vault-row-detail { font-size: 10px; color: #4a4038; margin-top: 2px; }
+
+    .vault-progress-bar {
+      width: 100%; height: 4px; background: #1a1528;
+      border-radius: 2px; margin-bottom: 10px; overflow: hidden;
+    }
+    .vault-progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+    .vault-progress-fill.dungeons { background: linear-gradient(90deg, #3fc7eb, #1a9fd4); }
+    .vault-progress-fill.raid { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+    .vault-progress-fill.world { background: linear-gradient(90deg, #2ecc71, #1ea85a); }
+
+    .tick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+      gap: 4px;
+    }
+    .tick-box {
+      width: 32px; height: 32px;
+      border: 1.5px solid #2a2235; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+      transition: all 0.15s ease; user-select: none;
+      background: #1a1528; color: #4a4038;
+    }
+    .tick-box:hover { border-color: #3a3040; background: #201830; transform: scale(1.05); }
+    .tick-box.checked {
+      border-color: rgba(255,215,0,0.4);
+      background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(204,136,0,0.06));
+      color: #ffd700; box-shadow: 0 0 8px rgba(255,215,0,0.08);
+    }
+    .tick-box.auto {
+      border-color: rgba(46,204,113,0.3);
+      background: linear-gradient(135deg, rgba(46,204,113,0.08), rgba(30,160,90,0.04));
+      color: #2ecc71; box-shadow: 0 0 8px rgba(46,204,113,0.06);
+    }
+
+    .task-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px 0;
+    }
+    .task-row + .task-row { border-top: 1px solid rgba(42,34,53,0.6); }
+
+    .task-check {
+      width: 24px; height: 24px; border: 1.5px solid #2a2235; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 12px; transition: all 0.15s ease;
+      user-select: none; flex-shrink: 0; background: #1a1528;
+    }
+    .task-check:hover { border-color: #3a3040; background: #201830; }
+    .task-check.checked, .task-check.auto {
+      border-color: rgba(46,204,113,0.4);
+      background: linear-gradient(135deg, rgba(46,204,113,0.12), rgba(30,160,90,0.06));
+      color: #2ecc71;
+    }
+
+    .auto-badge {
+      font-size: 8px; font-weight: 700; color: #2ecc71;
+      background: rgba(46,204,113,0.1); padding: 1px 5px;
+      border-radius: 3px; margin-left: 5px;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .task-info { flex: 1; min-width: 0; }
+    .task-name { font-size: 12px; font-weight: 500; color: #c8c0b0; }
+    .task-detail { font-size: 10px; color: #4a4038; margin-top: 1px; }
+    .task-name.done { color: #3a3530; text-decoration: line-through; }
+
+    .tracker-summary {
+      padding: 12px 18px; border-top: 1px solid #2a2235;
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(180deg, transparent 0%, rgba(255,215,0,0.02) 100%);
+    }
+    .summary-pct { font-size: 18px; font-weight: 700; color: #ffd700; font-family: 'Cinzel', serif; }
+    .summary-label { font-size: 10px; color: #5a5545; font-weight: 500; }
+    .summary-bar { flex: 1; height: 5px; background: #1a1528; border-radius: 3px; margin: 0 12px; overflow: hidden; }
+    .summary-bar-fill { height: 100%; background: linear-gradient(90deg, #e74c3c, #f39c12, #2ecc71); border-radius: 3px; transition: width 0.4s ease; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: #4a4038; }
+    .empty-state p { margin-bottom: 10px; font-size: 14px; }
+    .empty-state .instructions { font-size: 12px; color: #3a3530; line-height: 1.8; }
+
+    /* ── Class Colors ── */
+    .class-warrior { color: #C69B6D; }
+    .class-paladin { color: #F48CBA; }
+    .class-hunter { color: #AAD372; }
+    .class-rogue { color: #FFF468; }
+    .class-priest { color: #FFFFFF; }
+    .class-deathknight { color: #C41E3A; }
+    .class-shaman { color: #0070DD; }
+    .class-mage { color: #3FC7EB; }
+    .class-warlock { color: #8788EE; }
+    .class-monk { color: #00FF98; }
+    .class-druid { color: #FF7C0A; }
+    .class-demonhunter { color: #A330C9; }
+    .class-evoker { color: #33937F; }
+
+    /* ── BiS Tracker ── */
+    .bis-card {
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(163, 53, 238, 0.3);
+      border-radius: 8px; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .bis-header {
+      padding: 14px 18px; border-bottom: 1px solid #2a2235;
+      background: linear-gradient(180deg, rgba(163,53,238,0.05) 0%, transparent 100%);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .bis-header h2 { font-size: 15px; font-weight: 700; color: #a335ee; font-family: 'Cinzel', serif; letter-spacing: 1px; }
+    .bis-header .bis-spec { font-size: 11px; color: #5a5545; margin-top: 2px; }
+    .bis-score { font-size: 28px; font-weight: 700; color: #a335ee; font-family: 'Cinzel', serif; }
+    .bis-score .bis-score-pct { font-size: 14px; color: #5a5545; }
+
+    .bis-progress-row { padding: 8px 18px; border-bottom: 1px solid #2a2235; }
+    .bis-progress-bar { height: 6px; background: #1a1528; border-radius: 3px; overflow: hidden; }
+    .bis-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #e74c3c, #f39c12, #a335ee); transition: width 0.4s; }
+    .bis-progress-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: #4a4038; }
+
+    .bis-tier-row {
+      padding: 8px 18px; border-bottom: 1px solid #2a2235;
+      display: flex; align-items: center; gap: 10px; font-size: 12px;
+    }
+    .tier-name { color: #a335ee; font-weight: 600; font-size: 11px; }
+    .tier-bonus { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .tier-bonus.active { background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+    .tier-bonus.inactive { background: rgba(100,100,100,0.1); color: #4a4038; border: 1px solid #2a2235; }
+    .tier-count { font-size: 10px; color: #5a5545; margin-left: auto; }
+
+    .bis-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 14px 18px 4px; }
+    .bis-weapons { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 18px 14px; }
+    .bis-col { display: flex; flex-direction: column; gap: 4px; }
+
+    .bis-slot {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px; border-radius: 6px;
+      border: 1.5px solid #1e1e3a; background: #12101e;
+      transition: all 0.15s; cursor: pointer; position: relative;
+    }
+    .bis-slot:hover { border-color: #3a3040; background: #1a1528; }
+    .bis-slot.expanded { border-color: #a335ee; background: #1a1528; }
+    .bis-slot.is-perfect { border-color: rgba(46,204,113,0.5); background: rgba(46,204,113,0.04); }
+    .bis-slot.is-perfect::after {
+      content: ''; position: absolute; inset: 0; border-radius: 6px;
+      box-shadow: inset 0 0 8px rgba(46,204,113,0.15);
+      pointer-events: none;
+    }
+    .bis-slot.is-upgrading { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.03); }
+    .bis-slot.is-close { border-color: rgba(243,156,18,0.25); }
+    .bis-slot.is-upgrade { border-color: rgba(231,76,60,0.2); }
+
+    .bis-slot-left { flex: 1; min-width: 0; }
+    .bis-slot-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+    .bis-slot-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
+    .bis-slot-item { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bis-slot-ilvl { font-size: 10px; color: #5a5545; margin-top: 1px; }
+    .bis-arrow { color: #3a3530; }
+    .bis-target { color: #a335ee; font-weight: 600; }
+    .bis-diff { color: #e74c3c; font-size: 9px; }
+
+    .tier-badge {
+      font-size: 8px; font-weight: 700; color: #8a7e6a;
+      background: rgba(138,126,106,0.12); padding: 1px 5px;
+      border-radius: 3px; letter-spacing: 0.5px;
+    }
+    .status-badge {
+      font-size: 7px; font-weight: 700; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.5px;
+    }
+    .status-badge.is-perfect { color: #2ecc71; background: rgba(46,204,113,0.12); }
+    .status-badge.is-upgrading { color: #3fc7eb; background: rgba(63,199,235,0.1); }
+
+    .quality-poor { color: #9d9d9d; }
+    .quality-common { color: #ffffff; }
+    .quality-uncommon { color: #1eff00; }
+    .quality-rare { color: #0070dd; }
+    .quality-epic { color: #a335ee; }
+    .quality-legendary { color: #ff8000; }
+
+    /* ── BiS Detail Panel ── */
+    .bis-detail-panel {
+      margin: 0 18px 10px; border: 1px solid #3a3040;
+      border-radius: 8px; background: #1a1528; overflow: hidden;
+      animation: bisSlideIn 0.2s ease;
+    }
+    @keyframes bisSlideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+    .bis-detail-header {
+      padding: 10px 14px; border-bottom: 1px solid #2a2235;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      background: linear-gradient(180deg, rgba(163,53,238,0.06) 0%, transparent 100%);
+    }
+    .bis-detail-slot { font-size: 13px; font-weight: 600; color: #a335ee; font-family: 'Cinzel', serif; }
+    .bis-detail-status { font-size: 11px; color: #8a7e6a; margin-top: 3px; line-height: 1.4; }
+    .bis-detail-close { cursor: pointer; color: #5a5545; font-size: 16px; padding: 0 4px; }
+    .bis-detail-close:hover { color: #e74c3c; }
+    .bis-detail-body { padding: 12px 14px; }
+    .bis-detail-comparison {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+      padding: 10px; background: #12101e; border-radius: 6px;
+    }
+    .bis-detail-item { flex: 1; }
+    .bis-detail-item.is-match { border-left: 2px solid #2ecc71; padding-left: 8px; }
+    .bis-detail-item.target { border-left: 2px solid #a335ee; padding-left: 8px; }
+    .bis-detail-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #4a4038; font-weight: 700; margin-bottom: 3px; }
+    .bis-detail-name { font-size: 12px; font-weight: 600; }
+    .bis-detail-ilvl { font-size: 11px; color: #5a5545; margin-top: 2px; }
+    .bis-detail-arrow { font-size: 18px; color: #3a3530; flex-shrink: 0; }
+    .bis-detail-info { display: flex; flex-direction: column; gap: 6px; }
+    .bis-detail-row { display: flex; gap: 8px; font-size: 11px; color: #8a7e6a; line-height: 1.4; }
+    .bis-detail-key { color: #5a5545; font-weight: 600; min-width: 55px; flex-shrink: 0; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px; padding-top: 1px; }
+
+    .bis-footer {
+      padding: 12px 18px; border-top: 1px solid #2a2235;
+      font-size: 10px; color: #4a4038; display: flex; flex-direction: column; gap: 3px;
+    }
+    .bis-footer strong { color: #ffd700; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>WoW Dashboard</h1>
+    <p class="subtitle">Midnight Season 1 Gearing Companion</p>
+    <div class="reset-banner" id="resetBanner"></div>
+
+    <div class="char-tiles" id="charTiles"></div>
+
+    <div class="main-content">
+      <div id="dashboard"></div>
+      <div id="advice"></div>
+      <div id="tracker"></div>
+      <div id="bis"></div>
+    </div>
+  </div>
+
+  <script>
+    const CLASS_COLORS = {
+      'WARRIOR':'#C69B6D','PALADIN':'#F48CBA','HUNTER':'#AAD372','ROGUE':'#FFF468',
+      'PRIEST':'#FFFFFF','DEATHKNIGHT':'#C41E3A','DEATH KNIGHT':'#C41E3A',
+      'SHAMAN':'#0070DD','MAGE':'#3FC7EB','WARLOCK':'#8788EE','MONK':'#00FF98',
+      'DRUID':'#FF7C0A','DEMONHUNTER':'#A330C9','DEMON HUNTER':'#A330C9','EVOKER':'#33937F',
+    };
+    const CLASS_CSS = {
+      'Warrior':'class-warrior','Paladin':'class-paladin','Hunter':'class-hunter',
+      'Rogue':'class-rogue','Priest':'class-priest','Death Knight':'class-deathknight',
+      'Shaman':'class-shaman','Mage':'class-mage','Warlock':'class-warlock',
+      'Monk':'class-monk','Druid':'class-druid','Demon Hunter':'class-demonhunter',
+      'Evoker':'class-evoker',
+    };
+    // Class icon slugs for Wowhead CDN
+    const CLASS_ICON_SLUG = {
+      'WARRIOR':'warrior','PALADIN':'paladin','HUNTER':'hunter','ROGUE':'rogue',
+      'PRIEST':'priest','DEATHKNIGHT':'deathknight','DEATH KNIGHT':'deathknight',
+      'SHAMAN':'shaman','MAGE':'mage','WARLOCK':'warlock','MONK':'monk',
+      'DRUID':'druid','DEMONHUNTER':'demonhunter','DEMON HUNTER':'demonhunter','EVOKER':'evoker',
+    };
+
+    const EU_REALMS = ['Draenor','Frostmane','Outland','Tarren Mill'];
+    const VAULT = {
+      dungeons: { max: 8, slots: [1, 4, 8], timePerActivity: 45, unit: 'min' },
+      raid:     { max: 6, slots: [2, 4, 6], timePerActivity: 25, unit: 'min' },
+      world:    { max: 8, slots: [2, 4, 8], timePerActivity: 12, unit: 'min' },
+    };
+    // Time estimates (minutes): M+ ~45 (inc queue), Raid boss ~25 (inc trash),
+    // Delve/World ~12, Prey ~15, Spark ~15, World Boss ~5, Housing ~10
+    const WEEKLY_TASKS = [
+      { id:'spark',    name:"Liadrin's Spark Quest",  detail:'Apex Cache + Spark of Radiance', time: 15 },
+      { id:'worldboss',name:'World Boss',             detail:'Champion 4/6 (ilvl 256) Warbound', time: 5 },
+      { id:'prey1',    name:'Nightmare Prey Hunt #1', detail:'Champion crests + Hero vault', time: 15 },
+      { id:'prey2',    name:'Nightmare Prey Hunt #2', detail:'Champion crests + Hero vault', time: 15 },
+      { id:'prey3',    name:'Nightmare Prey Hunt #3', detail:'Champion crests + Hero vault', time: 15 },
+      { id:'housing',  name:'Housing Weekly',         detail:'Upgrade crests from Vaeli', time: 10 },
+    ];
+
+    let characters = {};
+    let selectedKey = '';
+    let trackerData = {};
+    let manualOverrides = {};
+
+    function mergeAddonData() {
+      const c = characters[selectedKey];
+      if (!c || c.level < 90) return;
+      autoFillTicks('dungeon', 8, c.vaultDungeons || 0);
+      autoFillTicks('raid', 6, c.vaultRaid || 0);
+      autoFillTicks('world', 8, c.vaultWorld || 0);
+      if ((c.sparkDone || c.sparkAccepted) && !manualOverrides['spark']) trackerData['spark'] = true;
+      if (c.worldBossDone && !manualOverrides['worldboss']) trackerData['worldboss'] = true;
+      if (c.housingDone && !manualOverrides['housing']) trackerData['housing'] = true;
+      const preyCount = c.preyDone || 0;
+      if (preyCount >= 1 && !manualOverrides['prey1']) trackerData['prey1'] = true;
+      if (preyCount >= 2 && !manualOverrides['prey2']) trackerData['prey2'] = true;
+      if (preyCount >= 3 && !manualOverrides['prey3']) trackerData['prey3'] = true;
+    }
+
+    function autoFillTicks(prefix, max, count) {
+      for (let i = 1; i <= max; i++) {
+        const key = `${prefix}_${i}`;
+        if (i <= count && !manualOverrides[key]) trackerData[key] = true;
+      }
+    }
+
+    function getNextReset(realm) {
+      const now = new Date();
+      const isEU = EU_REALMS.some(r => realm && realm.includes(r));
+      const resetDay = isEU ? 3 : 2, resetHourUTC = isEU ? 7 : 15;
+      const next = new Date(now);
+      next.setUTCHours(resetHourUTC, 0, 0, 0);
+      let daysUntil = resetDay - next.getUTCDay();
+      if (daysUntil < 0 || (daysUntil === 0 && now >= next)) daysUntil += 7;
+      next.setUTCDate(next.getUTCDate() + daysUntil);
+      const diff = next - now;
+      return `${Math.floor(diff/86400000)}d ${Math.floor((diff%86400000)/3600000)}h ${Math.floor((diff%3600000)/60000)}m`;
+    }
+
+    function updateResetBanner() {
+      const c = characters[selectedKey];
+      const realm = c ? c.realm : '';
+      const isEU = EU_REALMS.some(r => realm && realm.includes(r));
+      const region = isEU ? 'EU' : 'NA';
+      const resetDay = isEU ? 'Wednesday 07:00 UTC' : 'Tuesday 15:00 UTC';
+      document.getElementById('resetBanner').innerHTML =
+        `Weekly Reset in <strong>${getNextReset(realm)}</strong> <span style="font-size:10px;color:#4a4038;">&middot; ${region} &middot; ${resetDay}</span>`;
+    }
+
+    function formatPlayedTime(s) {
+      if (!s || s <= 0) return 'Unknown';
+      const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
+      return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+
+    function getWeeklyProgress(c) {
+      if (!c || c.level < 90) return { done: 0, total: 28, pct: 0 };
+      const dungeons = c.vaultDungeons || 0;
+      const raid = c.vaultRaid || 0;
+      const world = c.vaultWorld || 0;
+      let weekly = 0;
+      if (c.sparkDone || c.sparkAccepted) weekly++;
+      if (c.worldBossDone) weekly++;
+      if (c.housingDone) weekly++;
+      weekly += Math.min(c.preyDone || 0, 3);
+      const done = Math.min(dungeons,8) + Math.min(raid,6) + Math.min(world,8) + weekly;
+      const total = 28;
+      return { done, total, pct: Math.round((done/total)*100) };
+    }
+
+    // ── Data Fetching ──
+    async function fetchCharacters() {
+      try {
+        const res = await fetch('/api/characters');
+        characters = await res.json();
+        renderTiles();
+        renderDashboard();
+        updateResetBanner();
+        if (selectedKey && characters[selectedKey] && characters[selectedKey].level >= 90) {
+          await fetchTracker();
+          fetchAdvice();
+          fetchBiS();
+        } else {
+          document.getElementById('tracker').innerHTML = '';
+          document.getElementById('advice').innerHTML = '';
+          document.getElementById('bis').innerHTML = '';
+        }
+      } catch (err) { console.error('Failed to fetch:', err); }
+    }
+
+    async function fetchTracker() {
+      try {
+        const res = await fetch(`/api/tracker/${encodeURIComponent(selectedKey)}`);
+        const data = await res.json();
+        trackerData = data.tracker || {};
+        manualOverrides = data.tracker?._manualOverrides || {};
+        mergeAddonData();
+        renderTracker(data.weekKey);
+      } catch (err) { console.error('Failed to fetch tracker:', err); }
+    }
+
+    async function toggleTick(taskId, value) {
+      trackerData[taskId] = value;
+      manualOverrides[taskId] = true;
+      try {
+        await fetch(`/api/tracker/${encodeURIComponent(selectedKey)}`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ taskId, value }),
+        });
+        await fetch(`/api/tracker/${encodeURIComponent(selectedKey)}`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ taskId:'_manualOverrides', value: manualOverrides }),
+        });
+      } catch (err) { console.error('Failed to save:', err); }
+    }
+
+    // ── Character Tiles ──
+    function renderTiles() {
+      const el = document.getElementById('charTiles');
+      const keys = Object.keys(characters).filter(k => characters[k].name);
+      if (keys.length === 0) { el.innerHTML = ''; return; }
+      if (!selectedKey || !keys.includes(selectedKey)) selectedKey = keys[0];
+
+      el.innerHTML = keys.map(key => {
+        const c = characters[key];
+        const classColor = CLASS_COLORS[c.class?.toUpperCase()] || '#888';
+        const iconSlug = CLASS_ICON_SLUG[c.class?.toUpperCase()] || 'warrior';
+        const iconUrl = `https://wow.zamimg.com/images/wow/icons/large/classicon_${iconSlug}.jpg`;
+        const sel = key === selectedKey ? 'selected' : '';
+        const prog = getWeeklyProgress(c);
+        const classNameLocal = c.class ? c.class.charAt(0) + c.class.slice(1).toLowerCase() : '';
+
+        return `
+          <div class="char-tile ${sel}" data-key="${key}" style="--class-color:${classColor}">
+            <div class="tile-top">
+              <div class="tile-portrait">
+                <img src="${iconUrl}" alt="${classNameLocal}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <span class="fallback-icon" style="display:none;color:${classColor}">${(c.name||'?')[0]}</span>
+              </div>
+              <div class="tile-name-block">
+                <div class="tile-name" style="color:${classColor}">${c.name}</div>
+                <div class="tile-subtitle">${c.spec || ''} ${classNameLocal}</div>
+                <div class="tile-realm">${c.realm}</div>
+              </div>
+            </div>
+            <div class="tile-stats">
+              <div class="tile-stat"><span class="tile-stat-label">Level</span><span class="tile-stat-value tile-level">${c.level}</span></div>
+              <div class="tile-stat"><span class="tile-stat-label">iLvl</span><span class="tile-stat-value tile-ilvl">${c.ilvl || 0}</span></div>
+              <div class="tile-stat"><span class="tile-stat-label">Gold</span><span class="tile-stat-value tile-gold">${(c.gold||0).toLocaleString()}g</span></div>
+              <div class="tile-stat"><span class="tile-stat-label">Guild</span><span class="tile-stat-value tile-spec" style="font-size:11px">${c.guildName||'None'}</span></div>
+            </div>
+            ${c.level >= 90 ? `
+              <div class="tile-progress">
+                <div class="tile-progress-label">Weekly Progress</div>
+                <div class="tile-progress-bar"><div class="tile-progress-fill" style="width:${prog.pct}%"></div></div>
+                <div class="tile-progress-text">${prog.pct}% (${prog.done}/${prog.total})</div>
+              </div>` : ''}
+          </div>`;
+      }).join('');
+
+      el.querySelectorAll('.char-tile').forEach(tile => {
+        tile.addEventListener('click', async () => {
+          selectedKey = tile.dataset.key;
+          renderTiles();
+          renderDashboard();
+          updateResetBanner();
+          const c = characters[selectedKey];
+          if (c && c.level >= 90) { await fetchTracker(); fetchAdvice(); fetchBiS(); }
+          else { document.getElementById('tracker').innerHTML = ''; document.getElementById('advice').innerHTML = ''; document.getElementById('bis').innerHTML = ''; }
+        });
+      });
+    }
+
+    // ── Character Detail Card ──
+    function renderDashboard() {
+      const el = document.getElementById('dashboard');
+      const c = characters[selectedKey];
+      if (!c) { el.innerHTML = '<div class="empty-state"><p>No character data yet.</p><div class="instructions">1. Install WoWDashboard addon<br>2. Log into WoW<br>3. /reload</div></div>'; return; }
+      const classCSS = CLASS_CSS[c.class ? c.class.charAt(0)+c.class.slice(1).toLowerCase().replace('death k','Death K').replace('demon h','Demon H') : ''] || '';
+      const gold = c.gold||0, silver = c.silver||0, copper = c.copper||0;
+      const totalBags = c.totalBagSlots||1, freeBags = c.freeBagSlots||0;
+      const bagPct = Math.round(((totalBags-freeBags)/totalBags)*100);
+      const bagColor = bagPct > 90 ? '#e74c3c' : bagPct > 70 ? '#f39c12' : '#2ecc71';
+      const prof1 = c.prof1Name ? `${c.prof1Name} (${c.prof1Rank}/${c.prof1Max})` : 'None';
+      const prof2 = c.prof2Name ? `${c.prof2Name} (${c.prof2Rank}/${c.prof2Max})` : 'None';
+      const location = c.subZone && c.subZone !== c.zone ? `${c.subZone}, ${c.zone}` : (c.zone || 'Unknown');
+      const isMax = c.level >= 90;
+      const restedPct = c.restedPct || 0;
+
+      el.innerHTML = `
+        <div class="card">
+          <div class="section-title">Character Details</div>
+          <div class="card-body">
+            <div class="stat-grid">
+              <div class="stat"><span class="stat-label">Location</span><span class="stat-value-sm zone-value">${location}</span></div>
+              <div class="stat"><span class="stat-label">Time Played</span><span class="stat-value-sm played-value">${formatPlayedTime(c.playedTotal)}</span></div>
+              <div class="stat"><span class="stat-label">Profession 1</span><span class="stat-value-sm prof-value">${prof1}</span></div>
+              <div class="stat"><span class="stat-label">Profession 2</span><span class="stat-value-sm prof-value">${prof2}</span></div>
+              <div class="stat"><span class="stat-label">Mounts</span><span class="stat-value-sm mount-value">${c.mountsCollected||0} / ${c.mountsTotal||0}</span></div>
+              <div class="stat"><span class="stat-label">Pets</span><span class="stat-value-sm mount-value">${c.petsOwned||0}</span></div>
+            </div>
+          </div>
+          <div class="section-title">Quality of Life</div>
+          <div class="card-body">
+            <div class="stat-grid">
+              <div class="stat">
+                <span class="stat-label">Bag Space</span>
+                <span class="stat-value-sm">${freeBags} free / ${totalBags}</span>
+                <div class="bag-bar"><div class="bag-bar-fill" style="width:${bagPct}%;background:${bagColor};"></div></div>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Rested XP</span>
+                ${isMax ? '<span class="stat-value-sm" style="color:#3a3530;">Max Level</span>'
+                  : `<span class="stat-value-sm" style="color:#a335ee;">${restedPct}%</span>
+                     <div class="rested-bar"><div class="rested-bar-fill" style="width:${Math.min(restedPct,100)}%;"></div></div>`}
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">${c.realm} &middot; Updated: ${c.lastUpdated||'Unknown'}</div>
+        </div>`;
+    }
+
+    // ── Tracker ──
+    function renderTracker(weekKey) {
+      const el = document.getElementById('tracker');
+      const c = characters[selectedKey];
+      if (!c || c.level < 90) { el.innerHTML = ''; return; }
+      const dc = countTicks('dungeon',8), rc = countTicks('raid',6), wc = countTicks('world',8);
+      let wd = 0, weeklyTimeLeft = 0;
+      WEEKLY_TASKS.forEach(t => { if (trackerData[t.id]) wd++; else weeklyTimeLeft += t.time; });
+      const total = 8+6+8+WEEKLY_TASKS.length, done = dc+rc+wc+wd;
+      const pct = Math.round((done/total)*100);
+
+      // Calculate total time remaining
+      const dungeonTimeLeft = (8 - dc) * VAULT.dungeons.timePerActivity;
+      const raidTimeLeft = (6 - rc) * VAULT.raid.timePerActivity;
+      const worldTimeLeft = (8 - wc) * VAULT.world.timePerActivity;
+      const totalTimeLeft = dungeonTimeLeft + raidTimeLeft + worldTimeLeft + weeklyTimeLeft;
+      const timeHrs = Math.floor(totalTimeLeft / 60);
+      const timeMins = totalTimeLeft % 60;
+      const timeStr = timeHrs > 0 ? `~${timeHrs}h ${timeMins}m remaining` : `~${timeMins}m remaining`;
+
+      el.innerHTML = `
+        <div class="tracker-card">
+          <div class="tracker-header">
+            <h2>Weekly Gearing Tracker</h2>
+            <div style="text-align:right;">
+              <span class="week-label">Week of ${weekKey}</span>
+              <div style="font-size:10px;color:#f39c12;margin-top:3px;">${totalTimeLeft > 0 ? timeStr : 'All done!'}</div>
+            </div>
+          </div>
+          ${renderVaultSection('dungeons','Dungeons','Heroic / M0 / M+ / Timewalking',dc,8,VAULT.dungeons,'dungeon')}
+          ${renderVaultSection('raid','Raid Bosses','Voidspire (6) + Dreamrift (1) + Quel\'Danas (2)',rc,6,VAULT.raid,'raid')}
+          ${renderVaultSection('world','World Activities','Bountiful Delves (T8+), Prey Hunts, Zone Events',wc,8,VAULT.world,'world')}
+          <div class="vault-section">
+            <div class="vault-row-header">
+              <div><span class="vault-row-title weekly">Weekly Must-Dos</span><div class="vault-row-detail">${wd}/${WEEKLY_TASKS.length} completed${weeklyTimeLeft>0?' &middot; ~'+weeklyTimeLeft+'m left':''}</div></div>
+            </div>
+            ${WEEKLY_TASKS.map(t => renderTaskRow(t)).join('')}
+          </div>
+          <div class="tracker-summary">
+            <span class="summary-pct">${pct}%</span>
+            <div class="summary-bar"><div class="summary-bar-fill" style="width:${pct}%"></div></div>
+            <span class="summary-label">${done}/${total} done</span>
+          </div>
+        </div>`;
+
+      el.querySelectorAll('[data-tick]').forEach(box => {
+        box.addEventListener('click', async () => {
+          await toggleTick(box.dataset.tick, !trackerData[box.dataset.tick]);
+          await fetchTracker();
+        });
+      });
+    }
+
+    function countTicks(p, max) { let c=0; for(let i=1;i<=max;i++){if(trackerData[`${p}_${i}`])c++;} return c; }
+
+    function renderVaultSection(css, title, detail, count, max, vaultConfig, prefix) {
+      const slots = vaultConfig.slots;
+      const pct = Math.round((count/max)*100);
+      const remaining = max - count;
+      const timeLeft = remaining * vaultConfig.timePerActivity;
+      const timeStr = timeLeft > 60 ? `~${Math.floor(timeLeft/60)}h ${timeLeft%60}m` : `~${timeLeft}m`;
+      const slotsUnlocked = slots.filter(t => count >= t).length;
+      const slotsHtml = `<span style="font-size:10px;color:${slotsUnlocked===slots.length?'#2ecc71':slotsUnlocked>0?'#ffd700':'#4a4038'};font-weight:600;">${slotsUnlocked}/${slots.length} slots</span>`;
+      let ticks = '';
+      for (let i=1; i<=max; i++) {
+        const k=`${prefix}_${i}`, ch=!!trackerData[k], auto=ch&&!manualOverrides[k];
+        ticks += `<div class="tick-box ${ch?(auto?'auto':'checked'):''}" data-tick="${k}">${ch?'&#10003;':i}</div>`;
+      }
+      return `<div class="vault-section">
+        <div class="vault-row-header">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span class="vault-row-title ${css}">${title}</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${remaining > 0 ? `<span style="font-size:10px;color:#f39c12;white-space:nowrap;">${timeStr}</span>` : ''}
+                ${slotsHtml}
+              </div>
+            </div>
+            <div class="vault-row-detail">${detail}</div>
+          </div>
+        </div>
+        <div class="vault-progress-bar"><div class="vault-progress-fill ${css}" style="width:${pct}%"></div></div>
+        <div class="tick-grid">${ticks}</div></div>`;
+    }
+
+    function renderTaskRow(task) {
+      const ch = !!trackerData[task.id], auto = ch && !manualOverrides[task.id];
+      const c = characters[selectedKey];
+      let extra = '';
+      if (task.id === 'spark' && c) {
+        const p = c.sparkProgress||0, mx = c.sparkProgressMax||0, txt = c.sparkObjectiveText||'';
+        if (mx > 0 && p < mx) {
+          const pc = Math.round((p/mx)*100);
+          extra = `<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+            <div style="flex:1;height:3px;background:#1a1528;border-radius:2px;overflow:hidden;">
+              <div style="width:${pc}%;height:100%;background:#f39c12;border-radius:2px;"></div>
+            </div><span style="font-size:10px;color:#f39c12;font-weight:600;">${p}/${mx}</span></div>`;
+          if (txt && txt !== 'Completed') extra = `<div style="font-size:10px;color:#5a5545;margin-top:2px;">${txt}</div>` + extra;
+        }
+      }
+      // "Synced" badge = auto-detected from in-game data (not manually ticked)
+      const badge = auto ? '<span class="auto-badge">Synced</span>' : '';
+      return `<div class="task-row">
+        <div class="task-check ${ch?(auto?'auto':'checked'):''}" data-tick="${task.id}">${ch?'&#10003;':''}</div>
+        <div class="task-info">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span class="task-name ${ch?'done':''}">${task.name}</span>${badge}
+          </div>
+          <div class="task-detail">${task.detail}${!ch && task.time ? ` · ~${task.time}m` : ''}</div>
+          ${extra}
+        </div></div>`;
+    }
+
+    // ── Advice ──
+    let adviceData = {};
+    async function fetchAdvice() {
+      try { const r = await fetch('/api/advice'); adviceData = await r.json(); renderAdvice(); }
+      catch(e) { console.error(e); }
+    }
+    function renderAdvice() {
+      const el = document.getElementById('advice');
+      const c = characters[selectedKey];
+      if (!c || c.level < 90 || !adviceData[selectedKey]) { el.innerHTML = ''; return; }
+      const adv = adviceData[selectedKey];
+
+      // Build tips from advice data
+      let tips = '';
+      if (adv.tips) { for (const [id,tip] of Object.entries(adv.tips)) {
+        const label = id==='mplus'?'M+ Tip':id==='raid'?'Raid Tip':id;
+        tips += `<div class="advice-tip"><div class="advice-tip-label">${label}</div>${tip}</div>`;
+      }}
+
+      // Add BiS-related crest advice if we have gear data
+      let crestAdvice = '';
+      if (bisData && c) {
+        let needsUpgrade = [];
+        for (const [sid, bis] of Object.entries(bisData.slots)) {
+          if (bis.bisIlvl === 0) continue;
+          const curID = c[`gear_${sid}_itemID`] || 0;
+          const curIlvl = c[`gear_${sid}_ilvl`] || 0;
+          if (curID == bis.bisItemID && curIlvl < bis.bisIlvl) {
+            needsUpgrade.push({ slot: bis.slotName, gap: bis.bisIlvl - curIlvl, source: bis.source });
+          }
+        }
+        if (needsUpgrade.length > 0) {
+          const topUpgrade = needsUpgrade.sort((a,b) => b.gap - a.gap)[0];
+          crestAdvice = `<div class="advice-tip"><div class="advice-tip-label">Upgrade Priority</div>You have ${needsUpgrade.length} BiS items that need Dawncrests. Biggest gain: <strong>${topUpgrade.slot}</strong> (+${topUpgrade.gap} ilvl). Farm crests via M+ keys, raid bosses, and Tier 8+ Delves. Tier 11 Delves give the most crests per hour.</div>`;
+        }
+      }
+
+      // Ilvl-based gearing phase tip — references BiS data
+      let ilvlTip = '';
+      const ilvl = c.ilvl || 0;
+      // Find weakest slot for specific advice
+      let weakestSlot = null, weakestGap = 0;
+      if (bisData) {
+        for (const [sid, bis] of Object.entries(bisData.slots)) {
+          if (bis.bisIlvl === 0) continue;
+          const curIlvl = c[`gear_${sid}_ilvl`] || 0;
+          const gap = bis.bisIlvl - curIlvl;
+          if (gap > weakestGap) { weakestGap = gap; weakestSlot = bis; }
+        }
+      }
+      const weakestTip = weakestSlot ? ` Your biggest upgrade: <strong>${weakestSlot.slotName}</strong> from ${weakestSlot.source} (+${weakestGap} ilvl).` : '';
+
+      if (ilvl < 246) {
+        ilvlTip = `<div class="advice-tip"><div class="advice-tip-label">Gearing Phase: Early (${ilvl} ilvl)</div>Focus on M0 world tour for Champion 1/6 (246) gear, Heroic dungeons, and LFR for tier pieces. Craft your weapon first with 4 Sparks of Radiance — it's your single biggest DPS upgrade.${weakestTip}</div>`;
+      } else if (ilvl < 259) {
+        ilvlTip = `<div class="advice-tip"><div class="advice-tip-label">Gearing Phase: Mid (${ilvl} ilvl)</div>Push M+ keys (+6-9) for Champion/Hero vault rewards. Run Normal raids for tier set pieces (Voidbreaker's Accordance). Do Bountiful Delves T8+ with Coffer Keys from Prey Hunts.${weakestTip}</div>`;
+      } else if (ilvl < 272) {
+        ilvlTip = `<div class="advice-tip"><div class="advice-tip-label">Gearing Phase: Late (${ilvl} ilvl)</div>Push M+10 for Myth 1/6 vault rewards (272). Run Heroic raids for Hero-track gear (259-269). Spend Dawncrests to upgrade your BiS items. Target missing tier pieces for 4pc bonus.${weakestTip}</div>`;
+      } else {
+        ilvlTip = `<div class="advice-tip"><div class="advice-tip-label">Gearing Phase: Endgame (${ilvl} ilvl)</div>Mythic raids for Myth-track gear (272-282). Push high M+ keys for better vault options. Upgrade remaining BiS pieces with Myth Dawncrests to 6/6.${weakestTip}</div>`;
+      }
+
+      el.innerHTML = `
+        <div class="advice-card">
+          <div class="advice-header"><h3>Smart Recommendations</h3></div>
+          <div class="advice-nextup">${adv.nextUp || ''}</div>
+          ${tips}${ilvlTip}${crestAdvice}
+        </div>`;
+    }
+
+    // ── BiS Tracker ──
+    const QUALITY_CSS = ['quality-poor','quality-common','quality-uncommon','quality-rare','quality-epic','quality-legendary'];
+    const SLOT_ORDER_LEFT = [1, 2, 3, 5, 9, 11, 13];   // Head, Neck, Shoulder, Chest, Wrist, Ring1, Trinket1
+    const SLOT_ORDER_RIGHT = [15, 10, 6, 7, 8, 12, 14]; // Back, Hands, Waist, Legs, Feet, Ring2, Trinket2
+    const SLOT_ORDER_WEAPON = [16, 17];
+
+    let bisData = null;
+    let bisDetailSlot = null; // currently expanded slot
+
+    async function fetchBiS() {
+      const c = characters[selectedKey];
+      if (!c || c.level < 90) { document.getElementById('bis').innerHTML = ''; return; }
+      const specKey = 'frost-mage';
+      try {
+        const res = await fetch(`/api/bis/${specKey}`);
+        if (res.ok) {
+          bisData = await res.json();
+          renderBiS();
+          // Re-render advice now that BiS data is available (for crest tips)
+          renderAdvice();
+        }
+      } catch (err) { console.error('Failed to fetch BiS:', err); }
+    }
+
+    function getSlotStatus(c, slotId, bis) {
+      const currentItemID = c[`gear_${slotId}_itemID`] || 0;
+      const currentIlvl = c[`gear_${slotId}_ilvl`] || 0;
+      const isBisItem = currentItemID == bis.bisItemID;
+      const isMaxIlvl = currentIlvl >= bis.bisIlvl;
+      const isPerfect = isBisItem && isMaxIlvl;
+      const isClose = currentIlvl >= bis.bisIlvl - 13;
+      if (isPerfect) return 'perfect';    // right item, max ilvl
+      if (isBisItem) return 'upgrading';  // right item, needs upgrades
+      if (isClose) return 'close';        // wrong item but decent ilvl
+      return 'upgrade';                   // major upgrade needed
+    }
+
+    function renderBiS() {
+      const el = document.getElementById('bis');
+      const c = characters[selectedKey];
+      if (!c || c.level < 90 || !bisData) { el.innerHTML = ''; return; }
+
+      // Tier counting
+      const tierSlots = bisData.tierSet?.slots || [];
+      let tierCount = 0;
+      tierSlots.forEach(sid => {
+        const b = bisData.slots[sid];
+        if (b && c[`gear_${sid}_itemID`] == b.bisItemID) tierCount++;
+      });
+
+      // Overall progress score (ilvl-based)
+      let totalIlvl = 0, totalBisIlvl = 0, bisCount = 0, slotCount = 0;
+      for (const [sid, bis] of Object.entries(bisData.slots)) {
+        if (bis.bisIlvl === 0) continue;
+        slotCount++;
+        const curIlvl = c[`gear_${sid}_ilvl`] || 0;
+        totalIlvl += curIlvl;
+        totalBisIlvl += bis.bisIlvl;
+        if (c[`gear_${sid}_itemID`] == bis.bisItemID) bisCount++;
+      }
+      const gearPct = totalBisIlvl > 0 ? Math.round((totalIlvl / totalBisIlvl) * 100) : 0;
+      const avgCur = slotCount > 0 ? Math.round(totalIlvl / slotCount) : 0;
+      const avgBis = slotCount > 0 ? Math.round(totalBisIlvl / slotCount) : 0;
+
+      function renderSlot(slotId) {
+        const bis = bisData.slots[slotId];
+        if (!bis) return '';
+        const curName = c[`gear_${slotId}_name`] || 'Empty';
+        const curIlvl = c[`gear_${slotId}_ilvl`] || 0;
+        const curID = c[`gear_${slotId}_itemID`] || 0;
+        const curQ = c[`gear_${slotId}_quality`] || 0;
+        const qCSS = QUALITY_CSS[curQ] || 'quality-common';
+        const status = getSlotStatus(c, slotId, bis);
+
+        const statusMap = {
+          perfect:  { cls: 'is-perfect', icon: '&#10003;', label: 'BiS MAX' },
+          upgrading:{ cls: 'is-upgrading', icon: '&#8679;', label: 'NEEDS CRESTS' },
+          close:    { cls: 'is-close',   icon: '&#8776;', label: '' },
+          upgrade:  { cls: 'is-upgrade', icon: '',         label: '' },
+        };
+        const st = statusMap[status];
+        const tierBadge = bis.isTier ? '<span class="tier-badge">TIER</span>' : '';
+        const statusBadge = st.label ? `<span class="status-badge ${st.cls}">${st.label}</span>` : '';
+
+        const ilvlDiff = bis.bisIlvl - curIlvl;
+        const ilvlHtml = curIlvl > 0
+          ? `<span style="color:${status==='perfect'?'#2ecc71':'#8a7e6a'}">${curIlvl}</span> <span class="bis-arrow">&#8594;</span> <span class="bis-target">${bis.bisIlvl}</span>${ilvlDiff>0?` <span class="bis-diff">+${ilvlDiff}</span>`:''}`
+          : `<span style="color:#3a3530">Empty</span> <span class="bis-arrow">&#8594;</span> <span class="bis-target">${bis.bisIlvl}</span>`;
+
+        const sourceIcon = bis.sourceType === 'raid' ? '&#9876;' : bis.sourceType === 'mythicplus' ? '&#9881;' : bis.sourceType === 'crafted' ? '&#9874;' : '&#9733;';
+
+        return `
+          <div class="bis-slot ${st.cls}" data-slot="${slotId}">
+            <div class="bis-slot-left">
+              <div class="bis-slot-label">${bis.slotName}</div>
+              <div class="bis-slot-item ${qCSS}">${curName}</div>
+              <div class="bis-slot-ilvl">${ilvlHtml}</div>
+            </div>
+            <div class="bis-slot-right">
+              ${tierBadge}${statusBadge}
+            </div>
+          </div>`;
+      }
+
+      // Build columns
+      const leftHtml = SLOT_ORDER_LEFT.map(renderSlot).join('');
+      const rightHtml = SLOT_ORDER_RIGHT.map(renderSlot).join('');
+      const weaponHtml = SLOT_ORDER_WEAPON.map(renderSlot).join('');
+
+      el.innerHTML = `
+        <div class="bis-card">
+          <div class="bis-header">
+            <div>
+              <h2>Best in Slot</h2>
+              <div class="bis-spec">${bisData.specName} &middot; ${bisCount}/${slotCount} BiS items equipped</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="bis-score">${gearPct}<span class="bis-score-pct">%</span></div>
+              <div style="font-size:9px;color:#5a5545;margin-top:2px;">ilvl ${avgCur} of ${avgBis}</div>
+            </div>
+          </div>
+
+          <div class="bis-progress-row">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:9px;color:#5a5545;text-transform:uppercase;letter-spacing:0.8px;">Gear Progress to Full BiS</span>
+              <span style="font-size:9px;color:#a335ee;">${gearPct}% — avg ${avgCur} / ${avgBis} ilvl</span>
+            </div>
+            <div class="bis-progress-bar"><div class="bis-progress-fill" style="width:${gearPct}%"></div></div>
+            <div class="bis-progress-labels">
+              <span>Stat Priority: ${bisData.statPriority}</span>
+            </div>
+          </div>
+
+          <div class="bis-tier-row">
+            <span class="tier-name">${bisData.tierSet.name}</span>
+            <span class="tier-bonus ${tierCount>=2?'active':'inactive'}">2pc ${tierCount>=2?'&#10003;':'&#10007;'}</span>
+            <span class="tier-bonus ${tierCount>=4?'active':'inactive'}">4pc ${tierCount>=4?'&#10003;':'&#10007;'}</span>
+            <span class="tier-count">${tierCount}/4</span>
+          </div>
+
+          <div class="bis-columns">
+            <div class="bis-col">${leftHtml}</div>
+            <div class="bis-col">${rightHtml}</div>
+          </div>
+          <div class="bis-weapons">${weaponHtml}</div>
+
+          <div id="bisDetail"></div>
+
+          <div class="bis-footer">
+            <div><strong>Upgrade Priority:</strong> ${bisData.upgradePriority}</div>
+            <div><strong>Craft Priority:</strong> ${bisData.craftPriority}</div>
+            <div><strong>Embellishments:</strong> ${bisData.embellishments}</div>
+          </div>
+        </div>`;
+
+      // Attach click handlers
+      el.querySelectorAll('.bis-slot').forEach(slot => {
+        slot.addEventListener('click', () => {
+          const sid = slot.dataset.slot;
+          if (bisDetailSlot === sid) { bisDetailSlot = null; renderBisDetail(); }
+          else { bisDetailSlot = sid; renderBisDetail(); }
+          // Toggle selected visual
+          el.querySelectorAll('.bis-slot').forEach(s => s.classList.remove('expanded'));
+          if (bisDetailSlot) slot.classList.add('expanded');
+        });
+      });
+    }
+
+    function renderBisDetail() {
+      const el = document.getElementById('bisDetail');
+      if (!bisDetailSlot || !bisData) { if(el) el.innerHTML = ''; return; }
+      const c = characters[selectedKey];
+      const bis = bisData.slots[bisDetailSlot];
+      if (!bis) { el.innerHTML = ''; return; }
+
+      const curName = c[`gear_${bisDetailSlot}_name`] || 'Empty';
+      const curIlvl = c[`gear_${bisDetailSlot}_ilvl`] || 0;
+      const curID = c[`gear_${bisDetailSlot}_itemID`] || 0;
+      const status = getSlotStatus(c, bisDetailSlot, bis);
+      const isBisItem = curID == bis.bisItemID;
+
+      const sourceIcon = bis.sourceType==='raid'?'Raid Boss':bis.sourceType==='mythicplus'?'Mythic+ Dungeon':bis.sourceType==='crafted'?'Crafted':'Other';
+      const ilvlGap = bis.bisIlvl - curIlvl;
+      const statusText = status==='perfect'
+        ? 'This slot is fully optimized! Nothing to do here.'
+        : status==='upgrading'
+        ? `You have the BiS item! Spend Dawncrests to upgrade it from ${curIlvl} to ${bis.bisIlvl} (${ilvlGap > 0 ? '+'+ilvlGap+' ilvl' : 'already close'}). Mythic raid drops at Myth track which upgrades to 6/6 = ilvl 282.`
+        : status==='close'
+        ? `Your current item (${curIlvl}) is decent, but switching to the BiS item would be a +${ilvlGap} ilvl upgrade with better stats.`
+        : `Major upgrade available here! You're ${ilvlGap} ilvl below BiS. Prioritize getting this piece.`;
+
+      const wowheadLink = bis.wowheadUrl ? `<a href="${bis.wowheadUrl}" target="_blank" style="color:#a335ee;text-decoration:none;font-size:11px;">View on Wowhead &#8599;</a>` : '';
+
+      el.innerHTML = `
+        <div class="bis-detail-panel">
+          <div class="bis-detail-header">
+            <div>
+              <div class="bis-detail-slot">${bis.slotName} — BiS Recommendation</div>
+              <div class="bis-detail-status">${statusText}</div>
+            </div>
+            <div class="bis-detail-close" onclick="bisDetailSlot=null;renderBisDetail();document.querySelectorAll('.bis-slot').forEach(s=>s.classList.remove('expanded'));">&#10005;</div>
+          </div>
+          <div class="bis-detail-body">
+            <div class="bis-detail-comparison">
+              <div class="bis-detail-item ${isBisItem?'is-match':''}">
+                <div class="bis-detail-label">YOUR ITEM</div>
+                <div class="bis-detail-name quality-epic">${curName || 'Empty'}</div>
+                <div class="bis-detail-ilvl">${curIlvl > 0 ? `ilvl ${curIlvl}` : 'No item equipped'}</div>
+              </div>
+              <div class="bis-detail-arrow">&#8594;</div>
+              <div class="bis-detail-item target">
+                <div class="bis-detail-label">BiS TARGET</div>
+                <div class="bis-detail-name quality-epic">${bis.bisName}</div>
+                <div class="bis-detail-ilvl">ilvl ${bis.bisIlvl} (max)</div>
+              </div>
+            </div>
+            <div class="bis-detail-info">
+              <div class="bis-detail-row"><span class="bis-detail-key">Source</span><span>${bis.source}</span></div>
+              <div class="bis-detail-row"><span class="bis-detail-key">Type</span><span>${sourceIcon}</span></div>
+              <div class="bis-detail-row"><span class="bis-detail-key">Why BiS</span><span>${bis.notes}</span></div>
+              ${bis.usage?`<div class="bis-detail-row"><span class="bis-detail-key">Usage</span><span>${bis.usage}% of top raiders</span></div>`:''}
+              ${bis.tierAlt?`<div class="bis-detail-row"><span class="bis-detail-key">Tier Alt</span><span>${bis.tierAlt}</span></div>`:''}
+              ${wowheadLink?`<div class="bis-detail-row">${wowheadLink}</div>`:''}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ── Init ──
+    fetchCharacters();
+    setInterval(() => { fetchCharacters(); }, 30000);
+    setInterval(updateResetBanner, 60000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+## Interface: 120001
+## Title: WoW Dashboard
+## Notes: Weekly gearing tracker with smart recommendations
+## Author: ekeef
+## Version: 2.1.0
+## SavedVariables: WoWDashboardDB
+
+WoWDashboard.lua
+WoWDashboard_Advice.lua
+WoWDashboard_Priority.lua
+WoWDashboard_UI.lua

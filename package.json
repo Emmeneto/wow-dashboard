@@ -1,0 +1,19 @@
+{
+  "name": "wow-dashboard",
+  "version": "2.1.0",
+  "description": "Weekly gearing tracker and BiS companion for WoW: Midnight Season 1",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ekeef/wow-dashboard"
+  },
+  "keywords": ["wow", "world-of-warcraft", "midnight", "addon", "dashboard", "gearing"],
+  "author": "ekeef",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
