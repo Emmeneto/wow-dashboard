@@ -56,162 +56,81 @@
     }
     .reset-banner strong { color: #ffd700; font-weight: 600; }
 
-    /* ── Character Tiles ── */
-    .char-tiles {
+    /* ── Character Select ── */
+    .char-select {
       display: flex;
       gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      justify-content: center;
+      margin-bottom: 20px;
     }
-
-    .char-tile {
-      flex: 1 1 200px;
-      min-width: 160px;
-      max-width: 280px;
-      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
-      border: 1px solid #2a2235;
-      border-radius: 8px;
-      padding: 16px;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
+    .char-main {
+      flex: 1;
     }
-    .char-tile::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--class-color, #555);
-      opacity: 0.6;
-      transition: opacity 0.2s;
-    }
-    .char-tile:hover {
-      border-color: #3a3040;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    }
-    .char-tile:hover::before { opacity: 1; }
-
-    .char-tile.selected {
-      border-color: #ffd700;
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.15), 0 6px 20px rgba(0,0,0,0.4);
-    }
-    .char-tile.selected::before {
-      background: #ffd700;
-      opacity: 1;
-      height: 3px;
-    }
-
-    .tile-top {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .tile-portrait {
-      width: 48px;
-      height: 48px;
-      border-radius: 8px;
-      border: 2px solid #2a2235;
-      background: #1a1528;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-    .tile-portrait img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-    .tile-portrait .fallback-icon {
-      font-size: 22px;
-      font-weight: 700;
-      font-family: 'Cinzel', serif;
-      color: var(--class-color, #888);
-    }
-    .tile-name-block { flex: 1; min-width: 0; }
-    .tile-name {
-      font-family: 'Cinzel', serif;
-      font-size: 16px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .tile-subtitle {
-      font-size: 11px;
-      color: #5a5545;
-      margin-top: 1px;
-    }
-    .tile-realm {
-      font-size: 10px;
-      color: #3a3530;
-      margin-top: 1px;
-    }
-
-    .tile-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-    .tile-stat {
+    .char-sidebar {
+      width: 180px;
       display: flex;
       flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
     }
-    .tile-stat-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #4a4038;
-      font-weight: 600;
+    @media (max-width: 760px) {
+      .char-select { flex-direction: column; }
+      .char-sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
     }
-    .tile-stat-value {
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .tile-ilvl { color: #a335ee; }
-    .tile-gold { color: #ffd700; }
-    .tile-level { color: #c8c0b0; }
-    .tile-spec { color: #8a7e6a; }
 
-    .tile-progress {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #2a2235;
+    .char-main-tile {
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-top: 3px solid var(--class-color, #ffd700);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: all 0.3s ease;
     }
-    .tile-progress-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #4a4038;
-      font-weight: 600;
-      margin-bottom: 4px;
+    .char-main-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
     }
-    .tile-progress-bar {
-      height: 4px;
+    .char-main-portrait {
+      width: 64px; height: 64px; border-radius: 10px;
+      border: 2px solid var(--class-color, #555);
+      background: #1a1528; overflow: hidden;
+    }
+    .char-main-portrait img { width: 100%; height: 100%; object-fit: cover; }
+    .char-main-name {
+      font-family: 'Cinzel Decorative', 'Cinzel', serif;
+      font-size: 24px; font-weight: 700;
+    }
+    .char-main-info { font-size: 12px; color: #5a5545; margin-top: 2px; }
+    .char-main-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .char-main-stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
+    .char-main-stat-value { font-size: 18px; font-weight: 600; }
+
+    .char-side-tile {
+      background: #12101e;
+      border: 1px solid #2a2235;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .char-side-tile:hover {
+      border-color: #3a3040;
       background: #1a1528;
-      border-radius: 2px;
-      overflow: hidden;
     }
-    .tile-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #e74c3c, #f39c12, #2ecc71);
-      border-radius: 2px;
-      transition: width 0.4s ease;
+    .char-side-portrait {
+      width: 32px; height: 32px; border-radius: 6px;
+      border: 1.5px solid #2a2235; overflow: hidden; flex-shrink: 0;
     }
-    .tile-progress-text {
-      font-size: 11px;
-      color: #ffd700;
-      font-weight: 600;
-      margin-top: 3px;
-      text-align: right;
-    }
+    .char-side-portrait img { width: 100%; height: 100%; object-fit: cover; }
+    .char-side-name { font-size: 12px; font-weight: 600; }
+    .char-side-info { font-size: 10px; color: #4a4038; }
 
     /* ── Main Content ── */
     .main-content {
@@ -628,32 +547,10 @@
     .panel-drag-handle:active { cursor: grabbing; }
 
     /* ── Panel Minimize ── */
-    .card-minimized .card-body,
-    .card-minimized .panel-body,
-    .card-minimized .vault-section,
-    .card-minimized .bis-columns,
-    .card-minimized .bis-weapons,
-    .card-minimized .bis-tier-row,
-    .card-minimized .bis-progress-row,
-    .card-minimized .bis-footer,
-    .card-minimized .bis-detail-panel,
-    .card-minimized .crest-grid,
-    .card-minimized .crest-sources,
-    .card-minimized .tracker-summary,
-    .card-minimized .advice-nextup,
-    .card-minimized .advice-tip,
-    .card-minimized .card-footer {
-      display: none !important;
+    .card-minimized {
+      min-height: 0 !important;
     }
-    .card-minimized .section-title ~ .section-title,
-    .card-minimized .section-title ~ .card-body,
-    .card-minimized .section-title ~ .card-footer {
-      display: none !important;
-    }
-    .card-minimized .crest-header ~ div {
-      display: none !important;
-    }
-    .card-minimized > div:not(:first-child) {
+    .card-minimized > *:not(:first-child) {
       display: none !important;
     }
   </style>
@@ -665,7 +562,7 @@
     <div class="reset-banner" id="resetBanner"></div>
 
     <div id="landing"></div>
-    <div class="char-tiles" id="charTiles"></div>
+    <div id="charTiles"></div>
 
     <div class="main-content">
       <div class="panel-row panel-row-half">
@@ -881,54 +778,72 @@
 
       landing.innerHTML = '';
       if (!selectedKey || !keys.includes(selectedKey)) selectedKey = keys[0];
-      if (!selectedKey || !keys.includes(selectedKey)) selectedKey = keys[0];
 
-      el.innerHTML = keys.map(key => {
-        const c = characters[key];
-        const classColor = CLASS_COLORS[c.class?.toUpperCase()] || '#888';
-        const iconSlug = CLASS_ICON_SLUG[c.class?.toUpperCase()] || 'warrior';
-        const iconUrl = `https://wow.zamimg.com/images/wow/icons/large/classicon_${iconSlug}.jpg`;
-        const sel = key === selectedKey ? 'selected' : '';
-        const prog = getWeeklyProgress(c);
-        const classNameLocal = c.class ? c.class.charAt(0) + c.class.slice(1).toLowerCase() : '';
+      const selChar = characters[selectedKey];
+      const selColor = CLASS_COLORS[selChar.class?.toUpperCase()] || '#888';
+      const selIcon = CLASS_ICON_SLUG[selChar.class?.toUpperCase()] || 'warrior';
+      const selIconUrl = `https://wow.zamimg.com/images/wow/icons/large/classicon_${selIcon}.jpg`;
+      const selClassName = selChar.class ? selChar.class.charAt(0) + selChar.class.slice(1).toLowerCase() : '';
+      const prog = getWeeklyProgress(selChar);
 
+      const otherKeys = keys.filter(k => k !== selectedKey);
+
+      const sidebarHtml = otherKeys.map(key => {
+        const ch = characters[key];
+        const color = CLASS_COLORS[ch.class?.toUpperCase()] || '#888';
+        const icon = CLASS_ICON_SLUG[ch.class?.toUpperCase()] || 'warrior';
+        const iconUrl = `https://wow.zamimg.com/images/wow/icons/large/classicon_${icon}.jpg`;
+        const cn = ch.class ? ch.class.charAt(0) + ch.class.slice(1).toLowerCase() : '';
         return `
-          <div class="char-tile ${sel}" data-key="${key}" style="--class-color:${classColor}">
-            <div class="tile-top">
-              <div class="tile-portrait">
-                <img src="${iconUrl}" alt="${classNameLocal}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                <span class="fallback-icon" style="display:none;color:${classColor}">${(c.name||'?')[0]}</span>
-              </div>
-              <div class="tile-name-block">
-                <div class="tile-name" style="color:${classColor}">${c.name}</div>
-                <div class="tile-subtitle">${c.spec || ''} ${classNameLocal}</div>
-                <div class="tile-realm">${c.realm}</div>
-              </div>
+          <div class="char-side-tile" data-key="${key}" style="border-left:3px solid ${color};">
+            <div class="char-side-portrait"><img src="${iconUrl}" onerror="this.style.display='none'"></div>
+            <div>
+              <div class="char-side-name" style="color:${color}">${ch.name}</div>
+              <div class="char-side-info">${ch.spec || ''} ${cn} · ${ch.level}</div>
             </div>
-            <div class="tile-stats">
-              <div class="tile-stat"><span class="tile-stat-label">Level</span><span class="tile-stat-value tile-level">${c.level}</span></div>
-              <div class="tile-stat"><span class="tile-stat-label">iLvl</span><span class="tile-stat-value tile-ilvl">${c.ilvl || 0}</span></div>
-              <div class="tile-stat"><span class="tile-stat-label">Gold</span><span class="tile-stat-value tile-gold">${(c.gold||0).toLocaleString()}g</span></div>
-              <div class="tile-stat"><span class="tile-stat-label">Guild</span><span class="tile-stat-value tile-spec" style="font-size:11px">${c.guildName||'None'}</span></div>
-            </div>
-            ${c.level >= 90 ? `
-              <div class="tile-progress">
-                <div class="tile-progress-label">Weekly Progress</div>
-                <div class="tile-progress-bar"><div class="tile-progress-fill" style="width:${prog.pct}%"></div></div>
-                <div class="tile-progress-text">${prog.pct}% (${prog.done}/${prog.total})</div>
-              </div>` : ''}
           </div>`;
       }).join('');
 
-      el.querySelectorAll('.char-tile').forEach(tile => {
+      el.innerHTML = `
+        <div class="char-select">
+          <div class="char-main">
+            <div class="char-main-tile" style="--class-color:${selColor}">
+              <div class="char-main-top">
+                <div class="char-main-portrait" style="border-color:${selColor}">
+                  <img src="${selIconUrl}" onerror="this.style.display='none'">
+                </div>
+                <div>
+                  <div class="char-main-name" style="color:${selColor}">${selChar.name}</div>
+                  <div class="char-main-info">${selChar.spec || ''} ${selClassName} · ${selChar.realm}</div>
+                  <div class="char-main-info">${selChar.guildName ? '&lt;' + selChar.guildName + '&gt; ' + (selChar.guildRank||'') : 'No Guild'}</div>
+                </div>
+              </div>
+              <div class="char-main-stats">
+                <div><div class="char-main-stat-label">Level</div><div class="char-main-stat-value">${selChar.level}</div></div>
+                <div><div class="char-main-stat-label">Item Level</div><div class="char-main-stat-value" style="color:#a335ee">${selChar.ilvl || 0}</div></div>
+                <div><div class="char-main-stat-label">Gold</div><div class="char-main-stat-value" style="color:#ffd700">${(selChar.gold||0).toLocaleString()}g</div></div>
+                <div><div class="char-main-stat-label">Weekly</div><div class="char-main-stat-value" style="color:#2ecc71">${prog.pct}%</div></div>
+              </div>
+            </div>
+          </div>
+          ${otherKeys.length > 0 ? `<div class="char-sidebar">${sidebarHtml}</div>` : ''}
+        </div>`;
+
+      el.querySelectorAll('.char-side-tile').forEach(tile => {
         tile.addEventListener('click', async () => {
           selectedKey = tile.dataset.key;
           renderTiles();
           renderDashboard();
           updateResetBanner();
-          const c = characters[selectedKey];
-          if (c && c.level >= 90) { await fetchTracker(); fetchAdvice(); fetchBiS(); }
-          else { document.getElementById('tracker').innerHTML = ''; document.getElementById('advice').innerHTML = ''; document.getElementById('bis').innerHTML = ''; document.getElementById('crests').innerHTML = ''; }
+          const ch = characters[selectedKey];
+          if (ch && ch.level >= 90) { await fetchTracker(); fetchAdvice(); fetchBiS(); }
+          else {
+            document.getElementById('tracker').innerHTML = '';
+            document.getElementById('advice').innerHTML = '';
+            document.getElementById('bis').innerHTML = '';
+            document.getElementById('crests').innerHTML = '';
+            document.getElementById('extra').innerHTML = '';
+          }
         });
       });
     }
@@ -1276,7 +1191,10 @@
               <div class="bis-slot-ilvl">${ilvlHtml}</div>
             </div>
             <div class="bis-slot-right">
-              ${tierBadge}${bisBadge}${statusBadge}
+              <div style="display:flex;gap:3px;">
+                ${bisBadge}${tierBadge}
+              </div>
+              ${statusBadge}
             </div>
           </div>`;
       }
@@ -1440,6 +1358,29 @@
         farmAdvice = 'Push M+9 and above for Myth crests. Mythic raid bosses also drop them. This is the final upgrade tier (up to ilvl 289).';
       }
 
+      // Explain why this crest tier matters based on BiS
+      let crestReason = '';
+      if (bisData) {
+        let upgradeableSlots = [];
+        for (const [sid, bis] of Object.entries(bisData.slots)) {
+          if (bis.bisIlvl === 0) continue;
+          const curID = c[`gear_${sid}_itemID`] || 0;
+          const curIlvl = c[`gear_${sid}_ilvl`] || 0;
+          if (curID == bis.bisItemID && curIlvl < bis.bisIlvl) {
+            // Determine which crest tier this upgrade needs
+            let needed = 'Champion';
+            if (curIlvl >= 259) needed = 'Hero';
+            if (curIlvl >= 272) needed = 'Myth';
+            if (needed === focusTier) {
+              upgradeableSlots.push(bis.slotName);
+            }
+          }
+        }
+        if (upgradeableSlots.length > 0) {
+          crestReason = `You need ${focusTier} crests to upgrade: ${upgradeableSlots.join(', ')}. `;
+        }
+      }
+
       const tiersHtml = tiers.map(t => {
         const isFocus = t.name === focusTier;
         return `
@@ -1458,9 +1399,10 @@
             <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
           </div>
           <div class="crest-grid">${tiersHtml}</div>
+          <div style="padding:6px 18px 0;font-size:9px;color:#4a4038;border-top:1px solid #2a2235;">&#9733; = recommended tier for your current ilvl</div>
           <div style="padding:12px 18px;border-top:1px solid #2a2235;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f39c12;margin-bottom:6px;">What to Farm Next</div>
-            <div style="font-size:12px;color:#c8c0b0;line-height:1.5;">${farmAdvice}</div>
+            <div style="font-size:12px;color:#c8c0b0;line-height:1.5;">${crestReason}${farmAdvice}</div>
           </div>
           <div class="crest-sources">
             <strong>Cost:</strong> 20 crests/rank, 120 to fully upgrade one item<br>
@@ -1522,15 +1464,14 @@
 
     // ── Draggable Panels ──
     document.querySelectorAll('.panel-row').forEach(row => {
-      if (row.children.length > 1) {
-        new Sortable(row, {
-          animation: 150,
-          ghostClass: 'panel-ghost',
-          chosenClass: 'panel-chosen',
-          handle: '.panel-drag-handle',
-          group: 'panels',
-        });
-      }
+      new Sortable(row, {
+        animation: 200,
+        ghostClass: 'panel-ghost',
+        chosenClass: 'panel-chosen',
+        handle: '.panel-drag-handle',
+        group: 'panels',
+        swapThreshold: 0.65,
+      });
     });
 
     // ── Panel Minimize ──
