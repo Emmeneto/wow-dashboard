@@ -58,6 +58,7 @@ const TRACKER_FILE = path.join(__dirname, "weekly-tracker.json");
 const DATA_DIR = path.join(__dirname, "data");
 const UPLOADS_FILE = path.join(DATA_DIR, "uploaded-characters.json");
 const CHAT_LOG_FILE = path.join(DATA_DIR, "chat-log.json");
+const SUBSCRIBERS_FILE = path.join(DATA_DIR, "subscribers.json");
 const ADDON_DIR = WOW_ROOT ? path.join(WOW_ROOT, "Interface/AddOns/WoWDashboard") : null;
 const ADVICE_FILE = ADDON_DIR ? path.join(ADDON_DIR, "WoWDashboard_Advice.lua") : null;
 
@@ -109,6 +110,18 @@ function logConversation(entry) {
   } catch (err) {
     console.error("Log error:", err.message);
   }
+}
+
+// ── Subscription Check ──
+
+function isSubscribed(userKey) {
+  try {
+    if (fs.existsSync(SUBSCRIBERS_FILE)) {
+      const subs = JSON.parse(fs.readFileSync(SUBSCRIBERS_FILE, "utf-8"));
+      return subs.includes(userKey);
+    }
+  } catch (e) {}
+  return false;
 }
 
 // ── Helpers ──
@@ -775,6 +788,12 @@ app.post("/api/chat", async (req, res) => {
 
   const isLocal = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
   const userKey = req.body.userKey || 'anonymous';
+
+  // Subscription check: localhost bypasses
+  if (!isLocal && !isSubscribed(userKey)) {
+    return res.json({ reply: null, error: "Subscribe to unlock AI chat", requiresSubscription: true });
+  }
+
   if (!checkAIRateLimit(userKey, isLocal)) {
     return res.json({ reply: null, error: 'Daily AI limit reached (2/day). Try again tomorrow!', rateLimited: true });
   }
@@ -837,6 +856,36 @@ Be concise (2-3 sentences per response). Ask follow-up questions about their ava
     console.error("Chat error:", err.message);
     res.json({ reply: null, error: err.message });
   }
+});
+
+// ── Subscription Endpoints ──
+
+/**
+ * POST /api/subscribe - Subscribe a user (no payment for now, just a flag).
+ */
+app.post("/api/subscribe", (req, res) => {
+  const { userKey } = req.body;
+  if (!userKey) return res.status(400).json({ error: "userKey required" });
+
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    let subs = [];
+    if (fs.existsSync(SUBSCRIBERS_FILE)) {
+      try { subs = JSON.parse(fs.readFileSync(SUBSCRIBERS_FILE, "utf-8")); } catch (e) { subs = []; }
+    }
+    if (!subs.includes(userKey)) subs.push(userKey);
+    fs.writeFileSync(SUBSCRIBERS_FILE, JSON.stringify(subs, null, 2));
+    res.json({ subscribed: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to subscribe" });
+  }
+});
+
+/**
+ * GET /api/subscription/:userKey - Check subscription status.
+ */
+app.get("/api/subscription/:userKey", (req, res) => {
+  res.json({ subscribed: isSubscribed(req.params.userKey) });
 });
 
 /**

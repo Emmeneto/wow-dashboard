@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - WoW Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: #080810;
+      background-image:
+        radial-gradient(ellipse at 50% 0%, #1a1528 0%, #080810 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(163,53,238,0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 70%, rgba(255,215,0,0.03) 0%, transparent 50%);
+      color: #c8c0b0;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+
+    .page { max-width: 720px; margin: 0 auto; }
+
+    h1 {
+      text-align: center;
+      font-family: 'Cinzel Decorative', 'Cinzel', serif;
+      color: #ffd700;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #5a5545;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #3fc7eb;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    .policy-card {
+      background: linear-gradient(180deg, #14101e 0%, #110e1a 100%);
+      border: 1px solid #2a2235;
+      border-top: 2px solid rgba(255, 215, 0, 0.15);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .policy-card h2 {
+      font-family: 'Cinzel', serif;
+      color: #ffd700;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+
+    .policy-card p, .policy-card li {
+      font-size: 13px;
+      line-height: 1.7;
+      color: #a09888;
+      margin-bottom: 8px;
+    }
+
+    .policy-card ul {
+      padding-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    .policy-card li { margin-bottom: 4px; }
+
+    .highlight {
+      color: #c8c0b0;
+      font-weight: 500;
+    }
+
+    .important {
+      background: rgba(63,199,235,0.06);
+      border-left: 2px solid rgba(63,199,235,0.3);
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 12px;
+      color: #7ec8e3;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #2a2235;
+      font-size: 11px;
+      color: #3a3530;
+    }
+    .footer a { color: #3fc7eb; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a href="/" class="back-link">&larr; Back to Dashboard</a>
+    <h1>Privacy Policy</h1>
+    <p class="subtitle">WoW Dashboard &middot; Last Updated: April 2026</p>
+
+    <div class="policy-card">
+      <h2>What Data We Collect</h2>
+      <p>WoW Dashboard collects the following types of data from your World of Warcraft characters:</p>
+      <ul>
+        <li><span class="highlight">Character identity:</span> character name, realm, class, specialization, level, and guild name</li>
+        <li><span class="highlight">Gear data:</span> equipped item names, item levels, item IDs, and quality</li>
+        <li><span class="highlight">Progression data:</span> weekly vault progress, dungeon/raid/world activity counts, quest completion status</li>
+        <li><span class="highlight">General stats:</span> gold, bag space, professions, mounts, pets, playtime, and current location</li>
+        <li><span class="highlight">Chat interactions:</span> messages you send to the AI advisor, along with AI responses</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>Why We Collect It</h2>
+      <p>All data is collected for the sole purpose of <span class="highlight">providing personalized gearing recommendations</span> for your characters. Specifically:</p>
+      <ul>
+        <li>To display your character stats, gear, and weekly progress on the dashboard</li>
+        <li>To generate rule-based and AI-powered gearing advice tailored to your current equipment and progression</li>
+        <li>To track your weekly tasks and vault progress</li>
+        <li>To compare your equipped gear against Best-in-Slot targets</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>How Data Is Stored</h2>
+      <p>Your data is stored <span class="highlight">server-side in JSON files</span> on the dashboard server. Key points:</p>
+      <ul>
+        <li>Data is <span class="highlight">not shared with third parties</span></li>
+        <li>Data is not sold, rented, or transferred to any external service</li>
+        <li>AI chat requests are sent to Anthropic's Claude API for processing, but only character context needed for the conversation is included</li>
+        <li>No personally identifiable information (real name, email, IP addresses) is collected through the addon</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>Data Retention</h2>
+      <p>We retain your character data for a maximum of <span class="highlight">90 days</span> from the date of last upload. After 90 days of inactivity, your data is automatically deleted from the server.</p>
+      <p>Chat conversation logs are retained for a rolling window of the most recent 1,000 entries, after which older entries are automatically removed.</p>
+    </div>
+
+    <div class="policy-card">
+      <h2>The Addon vs. The Companion App</h2>
+      <div class="important">
+        The in-game WoWDashboard addon itself does NOT transmit any data externally. It only reads your character information and writes it to a local SavedVariables file on your computer.
+      </div>
+      <p>Data is only sent to the dashboard server when you explicitly use the <span class="highlight">companion upload tool</span> (upload.js) with your consent. The upload is initiated by you and requires an active choice to run.</p>
+    </div>
+
+    <div class="policy-card">
+      <h2>Your Rights</h2>
+      <p>You have the right to:</p>
+      <ul>
+        <li><span class="highlight">Access</span> your data by viewing the dashboard with your user key</li>
+        <li><span class="highlight">Request deletion</span> of all your data at any time</li>
+        <li><span class="highlight">Withdraw consent</span> by declining data collection in the dashboard consent banner</li>
+        <li><span class="highlight">Stop uploading</span> at any time by simply not running the companion upload tool</li>
+      </ul>
+      <p>To request data deletion or exercise any of your rights, please contact us using the information below.</p>
+    </div>
+
+    <div class="policy-card">
+      <h2>Contact</h2>
+      <p>For privacy-related questions, data deletion requests, or any concerns:</p>
+      <p style="margin-top:8px;"><span class="highlight">Email:</span> privacy@wowdashboard.app</p>
+      <p><span class="highlight">GitHub:</span> <a href="https://github.com/Emmeneto/wow-dashboard" style="color:#3fc7eb;text-decoration:none;">github.com/Emmeneto/wow-dashboard</a></p>
+    </div>
+
+    <div class="footer">
+      <p>WoW Dashboard is not affiliated with or endorsed by Blizzard Entertainment.</p>
+      <p>World of Warcraft is a trademark of Blizzard Entertainment, Inc.</p>
+      <p style="margin-top:8px;"><a href="/">Back to Dashboard</a></p>
+    </div>
+  </div>
+</body>
+</html>

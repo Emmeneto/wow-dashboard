@@ -639,6 +639,22 @@
   </style>
 </head>
 <body>
+  <!-- Consent Banner -->
+  <div id="consentBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:2000;background:linear-gradient(180deg,#1a1528 0%,#14101e 100%);border-bottom:2px solid rgba(255,215,0,0.3);padding:16px 24px;box-shadow:0 4px 20px rgba(0,0,0,0.6);">
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px;">
+        <div style="font-size:13px;color:#c8c0b0;line-height:1.6;">
+          WoW Dashboard collects character data and chat interactions to provide personalized recommendations. Data is stored securely and not shared with third parties.
+          <a href="/privacy.html" style="color:#3fc7eb;text-decoration:none;margin-left:4px;">Privacy Policy</a>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button onclick="acceptConsent()" style="background:linear-gradient(135deg,#ffd700,#cc8800);border:none;border-radius:6px;padding:8px 20px;color:#1a0e00;font-size:13px;font-weight:700;cursor:pointer;">Accept</button>
+        <button onclick="declineConsent()" style="background:none;border:1px solid #2a2235;border-radius:6px;padding:8px 20px;color:#5a5545;font-size:13px;cursor:pointer;">Decline</button>
+      </div>
+    </div>
+  </div>
+
   <div class="page">
     <h1>WoW Dashboard <span style="font-size:14px;color:#3fc7eb;font-family:'Inter',sans-serif;font-weight:500;vertical-align:middle;">AI-Powered</span></h1>
     <p class="subtitle">Your Midnight Season 1 Gearing Companion</p>
@@ -659,6 +675,13 @@
         <div id="crests"></div>
         <div id="extra"></div>
       </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;margin-top:24px;padding:16px 0;border-top:1px solid #2a2235;font-size:10px;color:#3a3530;">
+      <a href="/privacy.html" style="color:#5a5545;text-decoration:none;margin:0 8px;">Privacy Policy</a>
+      &middot;
+      <span style="margin:0 8px;">Not affiliated with Blizzard Entertainment</span>
     </div>
 
     <button class="chat-fab" onclick="toggleChat()" title="AI Gearing Coach">&#10024;</button>
@@ -1275,7 +1298,7 @@
             </div>
             <div style="font-size:12px;color:#c8c0b0;line-height:1.7;white-space:pre-line;margin-bottom:12px;">${formatted}</div>
 
-            <div id="inlineChat">
+            ${isUserSubscribed ? `<div id="inlineChat">
               <div id="inlineChatMessages" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
               <div style="display:flex;gap:6px;">
                 <input id="inlineChatInput" type="text" placeholder="Ask a follow-up... (e.g. I have 30 minutes, what should I do?)"
@@ -1283,7 +1306,22 @@
                   onkeydown="if(event.key==='Enter')sendInlineChat()">
                 <button onclick="sendInlineChat()" style="background:linear-gradient(135deg,#3fc7eb,#1a9fd4);border:none;border-radius:6px;padding:8px 12px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">Ask Claude</button>
               </div>
-            </div>
+            </div>` : `<div style="position:relative;">
+              <div style="filter:blur(4px);pointer-events:none;opacity:0.5;">
+                <div style="background:#1a1528;border:1px solid #2a2235;border-radius:6px;padding:12px;">
+                  <div style="color:#4a4038;font-size:11px;">Chat messages would appear here...</div>
+                  <div style="display:flex;gap:6px;margin-top:8px;">
+                    <input disabled placeholder="Ask Claude..." style="flex:1;background:#12101e;border:1px solid #2a2235;border-radius:6px;padding:8px;color:#4a4038;font-size:11px;">
+                    <button disabled style="background:#333;border:none;border-radius:6px;padding:8px 12px;color:#555;font-size:11px;">Ask</button>
+                  </div>
+                </div>
+              </div>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div style="font-size:13px;color:#ffd700;font-weight:600;margin-bottom:8px;">Unlock AI Chat</div>
+                <div style="font-size:11px;color:#5a5545;margin-bottom:12px;text-align:center;">Get personalized coaching from Claude.<br>Ask follow-up questions about your gear and priorities.</div>
+                <button onclick="subscribeToPro()" style="background:linear-gradient(135deg,#ffd700,#cc8800);border:none;border-radius:8px;padding:10px 24px;color:#1a0e00;font-size:13px;font-weight:700;cursor:pointer;">Subscribe</button>
+              </div>
+            </div>`}
           </div>`;
         // When AI advice is showing, hide rule-based tips
         ruleBasedContent = '';
@@ -1699,6 +1737,19 @@
     let chatOpen = false;
 
     function toggleChat() {
+      if (!isUserSubscribed) {
+        // Show subscribe prompt instead of opening chat
+        chatOpen = true;
+        const win = document.getElementById('chatWindow');
+        win.classList.add('open');
+        document.getElementById('chatMessages').innerHTML = `
+          <div style="text-align:center;padding:30px 10px;">
+            <div style="font-size:14px;color:#ffd700;font-weight:600;margin-bottom:8px;">Unlock AI Chat</div>
+            <div style="font-size:12px;color:#5a5545;margin-bottom:16px;line-height:1.5;">Get personalized coaching from Claude.<br>Ask follow-up questions about your gear and priorities.</div>
+            <button onclick="subscribeToPro();toggleChat();" style="background:linear-gradient(135deg,#ffd700,#cc8800);border:none;border-radius:8px;padding:10px 24px;color:#1a0e00;font-size:13px;font-weight:700;cursor:pointer;">Subscribe</button>
+          </div>`;
+        return;
+      }
       chatOpen = !chatOpen;
       document.getElementById('chatWindow').classList.toggle('open', chatOpen);
       if (chatOpen && chatHistory.length === 0) {
@@ -1767,8 +1818,61 @@
       }
     }
 
+    // ── Consent ──
+    function checkConsent() {
+      const consent = localStorage.getItem('wowdash_consent');
+      if (consent === null) {
+        document.getElementById('consentBanner').style.display = 'block';
+      }
+    }
+
+    function acceptConsent() {
+      localStorage.setItem('wowdash_consent', 'true');
+      document.getElementById('consentBanner').style.display = 'none';
+    }
+
+    function declineConsent() {
+      localStorage.setItem('wowdash_consent', 'false');
+      document.getElementById('consentBanner').style.display = 'none';
+      // Disable AI features when consent declined
+      document.querySelector('.chat-fab').style.display = 'none';
+      document.getElementById('chatWindow').style.display = 'none';
+    }
+
+    // ── Subscription ──
+    let isUserSubscribed = false;
+
+    async function checkSubscription() {
+      const key = localStorage.getItem('wowdash_userKey') || 'local';
+      if (key === 'local' || !key) { isUserSubscribed = true; return; }
+      try {
+        const res = await fetch(`/api/subscription/${encodeURIComponent(key)}`);
+        const data = await res.json();
+        isUserSubscribed = data.subscribed;
+      } catch (e) { isUserSubscribed = false; }
+    }
+
+    async function subscribeToPro() {
+      const key = localStorage.getItem('wowdash_userKey') || 'local';
+      try {
+        const res = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userKey: key }),
+        });
+        const data = await res.json();
+        if (data.subscribed) {
+          isUserSubscribed = true;
+          renderAdvice();
+        }
+      } catch (e) { console.error(e); }
+    }
+
     // ── Init ──
-    fetchCharacters();
+    checkConsent();
+    checkSubscription().then(() => {
+      fetchCharacters();
+    });
     setInterval(() => { fetchCharacters(); }, 30000);
     setInterval(updateResetBanner, 60000);
 
