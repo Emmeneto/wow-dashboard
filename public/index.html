@@ -5,16 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WoW Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', 'Segoe UI', sans-serif;
-      background: #0a0a12;
+      background: #080810;
       background-image:
-        radial-gradient(ellipse at 50% 0%, #1a1528 0%, #0a0a12 60%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,215,0,0.01) 2px, rgba(255,215,0,0.01) 4px);
+        radial-gradient(ellipse at 50% 0%, #1a1528 0%, #080810 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(163,53,238,0.05) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 70%, rgba(255,215,0,0.03) 0%, transparent 50%);
       color: #c8c0b0;
       min-height: 100vh;
       padding: 30px 20px;
@@ -24,7 +26,7 @@
 
     h1 {
       text-align: center;
-      font-family: 'Cinzel', serif;
+      font-family: 'Cinzel Decorative', 'Cinzel', serif;
       color: #ffd700;
       font-size: 28px;
       font-weight: 700;
@@ -217,16 +219,28 @@
       grid-template-columns: 1fr;
       gap: 12px;
     }
-    @media (min-width: 760px) {
-      .main-content {
-        grid-template-columns: 1fr 1fr;
-      }
-      .main-content .tracker-card { grid-column: 1 / -1; }
-      .main-content .bis-card { grid-column: 1 / -1; }
-      .card, .advice-card {
-        min-height: 320px;
-      }
+    .panel-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
+    @media (min-width: 760px) {
+      .panel-row-half { grid-template-columns: 1fr 1fr; }
+      .panel-row-half > div { min-height: 0; }
+      .panel-row-half > div > .card,
+      .panel-row-half > div > .advice-card { min-height: 340px; }
+      #dashboard > .card, #advice > .advice-card { min-height: 340px; }
+      #tracker > .tracker-card, #bis > .bis-card { min-height: auto; }
+    }
+    .panel-full { grid-column: 1 / -1; }
+
+    /* Collapsible panel header */
+    .panel-collapse-btn {
+      cursor: pointer; font-size: 10px; color: #4a4038;
+      background: #1a1528; border: 1px solid #2a2235; border-radius: 4px;
+      padding: 2px 8px; transition: all 0.15s;
+    }
+    .panel-collapse-btn:hover { color: #ffd700; border-color: #3a3040; }
 
     /* ── Cards ── */
     .card {
@@ -574,7 +588,6 @@
       border-top: 2px solid rgba(255, 170, 0, 0.3);
       border-radius: 8px; overflow: hidden;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      grid-column: 1 / -1;
     }
     .crest-header {
       padding: 14px 18px; border-bottom: 1px solid #2a2235;
@@ -583,7 +596,7 @@
     }
     .crest-header h2 { font-size: 15px; font-weight: 700; color: #f39c12; font-family: 'Cinzel', serif; letter-spacing: 1px; }
     .crest-grid {
-      display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 14px 18px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 14px 18px;
     }
     @media (max-width: 760px) { .crest-grid { grid-template-columns: repeat(2, 1fr); } }
     .crest-tier {
@@ -603,23 +616,70 @@
     .crest-champion { color: #a335ee; }
     .crest-hero { color: #ff8000; }
     .crest-myth { color: #e6cc80; }
+
+    /* ── Draggable Panels ── */
+    .panel-ghost { opacity: 0.3; }
+    .panel-chosen { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+    .panel-drag-handle {
+      cursor: grab; padding: 2px 6px; border-radius: 3px;
+      color: #3a3530; font-size: 14px; transition: color 0.15s;
+    }
+    .panel-drag-handle:hover { color: #ffd700; }
+    .panel-drag-handle:active { cursor: grabbing; }
+
+    /* ── Panel Minimize ── */
+    .card-minimized .card-body,
+    .card-minimized .panel-body,
+    .card-minimized .vault-section,
+    .card-minimized .bis-columns,
+    .card-minimized .bis-weapons,
+    .card-minimized .bis-tier-row,
+    .card-minimized .bis-progress-row,
+    .card-minimized .bis-footer,
+    .card-minimized .bis-detail-panel,
+    .card-minimized .crest-grid,
+    .card-minimized .crest-sources,
+    .card-minimized .tracker-summary,
+    .card-minimized .advice-nextup,
+    .card-minimized .advice-tip,
+    .card-minimized .card-footer {
+      display: none !important;
+    }
+    .card-minimized .section-title ~ .section-title,
+    .card-minimized .section-title ~ .card-body,
+    .card-minimized .section-title ~ .card-footer {
+      display: none !important;
+    }
+    .card-minimized .crest-header ~ div {
+      display: none !important;
+    }
+    .card-minimized > div:not(:first-child) {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
   <div class="page">
-    <h1>WoW Dashboard</h1>
-    <p class="subtitle">Midnight Season 1 Gearing Companion</p>
+    <h1>WoW Dashboard <span style="font-size:14px;color:#3fc7eb;font-family:'Inter',sans-serif;font-weight:500;vertical-align:middle;">AI-Powered</span></h1>
+    <p class="subtitle">Your Midnight Season 1 Gearing Companion</p>
     <div class="reset-banner" id="resetBanner"></div>
 
     <div id="landing"></div>
     <div class="char-tiles" id="charTiles"></div>
 
     <div class="main-content">
-      <div id="dashboard"></div>
-      <div id="advice"></div>
-      <div id="tracker"></div>
-      <div id="bis"></div>
-      <div id="crests"></div>
+      <div class="panel-row panel-row-half">
+        <div id="dashboard"></div>
+        <div id="advice"></div>
+      </div>
+      <div class="panel-row panel-row-half">
+        <div id="tracker"></div>
+        <div id="bis"></div>
+      </div>
+      <div class="panel-row panel-row-half">
+        <div id="crests"></div>
+        <div id="extra"></div>
+      </div>
     </div>
   </div>
 
@@ -756,6 +816,7 @@
           document.getElementById('advice').innerHTML = '';
           document.getElementById('bis').innerHTML = '';
           document.getElementById('crests').innerHTML = '';
+          document.getElementById('extra').innerHTML = '';
         }
       } catch (err) { console.error('Failed to fetch:', err); }
     }
@@ -889,8 +950,12 @@
       const restedPct = c.restedPct || 0;
 
       el.innerHTML = `
-        <div class="card">
-          <div class="section-title">Character Details</div>
+        <div class="card" data-panel="dashboard">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-right:12px;">
+            <span class="section-title" style="flex:1;">Character Details</span>
+            <span class="panel-drag-handle">&#8942;&#8942;</span>
+            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;margin-left:6px;">&#8722;</button>
+          </div>
           <div class="card-body">
             <div class="stat-grid">
               <div class="stat"><span class="stat-label">Location</span><span class="stat-value-sm zone-value">${location}</span></div>
@@ -942,12 +1007,15 @@
       const timeStr = timeHrs > 0 ? `~${timeHrs}h ${timeMins}m remaining` : `~${timeMins}m remaining`;
 
       el.innerHTML = `
-        <div class="tracker-card">
+        <div class="tracker-card" data-panel="tracker">
           <div class="tracker-header">
-            <h2>Weekly Gearing Tracker</h2>
-            <div style="text-align:right;">
-              <span class="week-label">Week of ${weekKey}</span>
-              <div style="font-size:10px;color:#f39c12;margin-top:3px;">${totalTimeLeft > 0 ? timeStr : 'All done!'}</div>
+            <h2><span class="panel-drag-handle">&#8942;&#8942;</span> Weekly Gearing Tracker</h2>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="text-align:right;">
+                <span class="week-label">Week of ${weekKey}</span>
+                <div style="font-size:10px;color:#f39c12;margin-top:3px;">${totalTimeLeft > 0 ? timeStr : 'All done!'}</div>
+              </div>
+              <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
             </div>
           </div>
           ${renderVaultSection('dungeons','Dungeons','Heroic / M0 / M+ / Timewalking',dc,8,VAULT.dungeons,'dungeon')}
@@ -1097,8 +1165,11 @@
       }
 
       el.innerHTML = `
-        <div class="advice-card">
-          <div class="advice-header"><h3>Smart Recommendations</h3></div>
+        <div class="advice-card" data-panel="advice">
+          <div class="advice-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3><span class="panel-drag-handle">&#8942;&#8942;</span> Smart Recommendations</h3>
+            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+          </div>
           <div class="advice-nextup">${adv.nextUp || ''}</div>
           ${tips}${ilvlTip}${crestAdvice}
         </div>`;
@@ -1123,7 +1194,7 @@
           bisData = await res.json();
           renderBiS();
           renderCrests();
-          // Re-render advice now that BiS data is available (for crest tips)
+          renderExtra();
           renderAdvice();
         }
       } catch (err) { console.error('Failed to fetch BiS:', err); }
@@ -1216,15 +1287,18 @@
       const weaponHtml = SLOT_ORDER_WEAPON.map(renderSlot).join('');
 
       el.innerHTML = `
-        <div class="bis-card">
+        <div class="bis-card" data-panel="bis">
           <div class="bis-header">
             <div>
-              <h2>Best in Slot</h2>
+              <h2><span class="panel-drag-handle">&#8942;&#8942;</span> Best in Slot</h2>
               <div class="bis-spec">${bisData.specName} &middot; ${bisCount}/${slotCount} BiS items equipped</div>
             </div>
-            <div style="text-align:right;">
-              <div class="bis-score">${gearPct}<span class="bis-score-pct">%</span></div>
-              <div style="font-size:9px;color:#5a5545;margin-top:2px;">ilvl ${avgCur} of ${avgBis}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="text-align:right;">
+                <div class="bis-score">${gearPct}<span class="bis-score-pct">%</span></div>
+                <div style="font-size:9px;color:#5a5545;margin-top:2px;">ilvl ${avgCur} of ${avgBis}</div>
+              </div>
+              <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
             </div>
           </div>
 
@@ -1340,35 +1414,104 @@
       const c = characters[selectedKey];
       if (!c || c.level < 90) { el.innerHTML = ''; return; }
 
+      const ilvl = c.ilvl || 0;
       const tiers = [
         { name: 'Adventurer', css: 'crest-adventurer', color: '#1eff00', ilvl: '220-237', sources: 'LFR, Heroic dungeons, Delve T4, outdoor events' },
-        { name: 'Veteran', css: 'crest-veteran', color: '#0070dd', ilvl: '233-250', sources: 'LFR, Heroic Season dungeons, Delve T5-6, Hard Prey hunts' },
-        { name: 'Champion', css: 'crest-champion', color: '#a335ee', ilvl: '246-263', sources: 'M+ 2-3, Normal raid, Delve T7-10, weekly events' },
+        { name: 'Veteran', css: 'crest-veteran', color: '#0070dd', ilvl: '233-250', sources: 'Heroic Season dungeons, Delve T5-6, Hard Prey hunts' },
+        { name: 'Champion', css: 'crest-champion', color: '#a335ee', ilvl: '246-263', sources: 'M+ 2-3, Normal raid, Delve T7-10' },
         { name: 'Hero', css: 'crest-hero', color: '#ff8000', ilvl: '259-276', sources: 'M+ 4-8, Heroic raid, Bounty Delve T8+' },
         { name: 'Myth', css: 'crest-myth', color: '#e6cc80', ilvl: '272-289', sources: 'M+ 9+, Mythic raid' },
       ];
 
-      const tiersHtml = tiers.map(t => `
-        <div class="crest-tier">
-          <div class="crest-tier-name ${t.css}">${t.name}</div>
-          <div class="crest-tier-count" style="color:${t.color}">-</div>
-          <div class="crest-tier-cap">/ 100 weekly cap</div>
-          <div class="crest-tier-bar"><div class="crest-tier-fill" style="width:0%;background:${t.color};"></div></div>
-          <div style="font-size:9px;color:#4a4038;margin-top:6px;">${t.ilvl}</div>
+      // Determine which crest tier the player should focus on based on ilvl
+      let focusTier = 'Champion';
+      let farmAdvice = '';
+      if (ilvl < 240) {
+        focusTier = 'Veteran';
+        farmAdvice = 'Farm Hard Prey hunts (15 crests/run, ~10 min each) and Delve T5-6 to upgrade Veteran-track gear.';
+      } else if (ilvl < 255) {
+        focusTier = 'Champion';
+        farmAdvice = 'Farm Delve T7-10 (repeatable, ~12 min each) and M+ 2-3 keys for Champion crests to push gear to 263.';
+      } else if (ilvl < 270) {
+        focusTier = 'Hero';
+        farmAdvice = 'Push M+ 4-8 keys and run Heroic raid for Hero crests. Bounty Delves T8+ with Coffer Keys are also efficient.';
+      } else {
+        focusTier = 'Myth';
+        farmAdvice = 'Push M+9 and above for Myth crests. Mythic raid bosses also drop them. This is the final upgrade tier (up to ilvl 289).';
+      }
+
+      const tiersHtml = tiers.map(t => {
+        const isFocus = t.name === focusTier;
+        return `
+        <div class="crest-tier" style="${isFocus ? 'border-color:'+t.color+';background:#1a1528;' : ''}">
+          <div class="crest-tier-name ${t.css}">${t.name}${isFocus ? ' ★' : ''}</div>
+          <div class="crest-tier-cap" style="margin-top:4px;">100/week</div>
+          <div style="font-size:9px;color:#5a5545;margin-top:4px;">${t.ilvl}</div>
+          <div style="font-size:9px;color:#4a4038;margin-top:4px;">${t.sources}</div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="crest-card" data-panel="crests">
+          <div class="crest-header">
+            <h2><span class="panel-drag-handle">&#8942;&#8942;</span> Dawncrest Tracker</h2>
+            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+          </div>
+          <div class="crest-grid">${tiersHtml}</div>
+          <div style="padding:12px 18px;border-top:1px solid #2a2235;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f39c12;margin-bottom:6px;">What to Farm Next</div>
+            <div style="font-size:12px;color:#c8c0b0;line-height:1.5;">${farmAdvice}</div>
+          </div>
+          <div class="crest-sources">
+            <strong>Cost:</strong> 20 crests/rank, 120 to fully upgrade one item<br>
+            <strong>Convert:</strong> Higher→Lower 1:1 &middot; Lower→Higher 3:1 (gear milestone needed)
+          </div>
+        </div>`;
+    }
+
+    // ── Extra Panel (placeholder for future features) ──
+    function renderExtra() {
+      const el = document.getElementById('extra');
+      const c = characters[selectedKey];
+      if (!c || c.level < 90) { el.innerHTML = ''; return; }
+
+      // After weekly tasks are done, what should you farm?
+      const ilvl = c.ilvl || 0;
+      let bonusFarms = [];
+      if (ilvl < 255) {
+        bonusFarms = [
+          { name: 'Delve T7-10 spam', detail: 'Champion crests + chance at Hero gear', time: '~12 min each' },
+          { name: 'Normal raid re-clear', detail: 'Tier set pieces if missing any', time: '~2.5 hours' },
+          { name: 'M+ key pushing', detail: 'Better vault options + crest income', time: '~45 min each' },
+        ];
+      } else {
+        bonusFarms = [
+          { name: 'M+ key pushing (+10+)', detail: 'Myth vault rewards (ilvl 272) + Myth crests', time: '~45 min each' },
+          { name: 'Heroic raid', detail: 'Hero-track gear (259-269) + tier pieces', time: '~3 hours' },
+          { name: 'Bounty Delve T8+', detail: 'Hero crests + guaranteed Hero gear with keys', time: '~15 min each' },
+          { name: 'Crafting with Sparks', detail: 'Craft BiS pieces (weapon, wrist, cloak)', time: 'One-time per Spark' },
+        ];
+      }
+
+      const farmsHtml = bonusFarms.map(f => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e1e3a;">
+          <div>
+            <div style="font-size:12px;color:#c8c0b0;font-weight:500;">${f.name}</div>
+            <div style="font-size:10px;color:#4a4038;">${f.detail}</div>
+          </div>
+          <div style="font-size:10px;color:#f39c12;white-space:nowrap;">${f.time}</div>
         </div>`).join('');
 
       el.innerHTML = `
-        <div class="crest-card">
-          <div class="crest-header">
-            <h2>Dawncrest Tracker</h2>
-            <span style="font-size:10px;color:#4a4038;">20 crests per upgrade rank &middot; 100 weekly cap</span>
+        <div class="card" style="border-top:2px solid rgba(46,204,113,0.3);" data-panel="extra">
+          <div style="padding:14px 18px;border-bottom:1px solid #2a2235;background:linear-gradient(180deg,rgba(46,204,113,0.05) 0%,transparent 100%);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h2 style="font-size:15px;font-weight:700;color:#2ecc71;font-family:'Cinzel',serif;letter-spacing:1px;"><span class="panel-drag-handle">&#8942;&#8942;</span> Bonus Farming</h2>
+              <div style="font-size:11px;color:#5a5545;margin-top:2px;">After weekly tasks — what to farm for more progress</div>
+            </div>
+            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
           </div>
-          <div class="crest-grid">${tiersHtml}</div>
-          <div class="crest-sources">
-            <strong>Upgrade cost:</strong> 120 crests to fully upgrade one item (6 ranks x 20 each)<br>
-            <strong>Conversion:</strong> Higher to lower 1:1 &middot; Lower to higher 3:1 (requires gear milestone)<br>
-            <strong>Best farming:</strong> Veteran = Hard Prey hunts &middot; Champion = Delve T7-10 &middot; Hero = M+ 4-8 &middot; Myth = M+ 9+
-          </div>
+          <div style="padding:14px 18px;">${farmsHtml}</div>
         </div>`;
     }
 
@@ -1376,6 +1519,31 @@
     fetchCharacters();
     setInterval(() => { fetchCharacters(); }, 30000);
     setInterval(updateResetBanner, 60000);
+
+    // ── Draggable Panels ──
+    document.querySelectorAll('.panel-row').forEach(row => {
+      if (row.children.length > 1) {
+        new Sortable(row, {
+          animation: 150,
+          ghostClass: 'panel-ghost',
+          chosenClass: 'panel-chosen',
+          handle: '.panel-drag-handle',
+          group: 'panels',
+        });
+      }
+    });
+
+    // ── Panel Minimize ──
+    document.addEventListener('click', (e) => {
+      const toggle = e.target.closest('.panel-min-btn');
+      if (toggle) {
+        const card = toggle.closest('[data-panel]');
+        if (card) {
+          card.classList.toggle('card-minimized');
+          toggle.textContent = card.classList.contains('card-minimized') ? '+' : '\u2212';
+        }
+      }
+    });
   </script>
 </body>
 </html>
