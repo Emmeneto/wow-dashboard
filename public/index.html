@@ -523,12 +523,11 @@
     }
     .crest-header h2 { font-size: 15px; font-weight: 700; color: #f39c12; font-family: 'Cinzel', serif; letter-spacing: 1px; }
     .crest-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 14px 18px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; padding: 14px 18px;
     }
-    @media (max-width: 760px) { .crest-grid { grid-template-columns: repeat(2, 1fr); } }
     .crest-tier {
-      padding: 12px; border-radius: 6px; border: 1px solid #2a2235; background: #12101e;
-      text-align: center; min-height: 80px;
+      padding: 14px; border-radius: 8px; border: 1px solid #2a2235; background: #12101e;
+      text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
     .crest-tier-name { font-size: 11px; font-weight: 700; text-transform: none; letter-spacing: 1px; margin-bottom: 6px; }
     .crest-tier-count { font-size: 20px; font-weight: 700; font-family: 'Cinzel', serif; }
@@ -581,19 +580,45 @@
     .panel-drag-handle:active { cursor: grabbing; }
 
     /* ── Panel Minimize ── */
+    /* Smooth minimize transition */
+    [data-panel] {
+      transition: max-height 0.3s ease, min-height 0.3s ease;
+      overflow: hidden;
+    }
     .card-minimized {
       min-height: 0 !important;
       max-height: 48px !important;
       overflow: hidden !important;
+      transition: max-height 0.3s ease;
     }
     .card-minimized > *:not(:first-child) {
       display: none !important;
     }
-    /* Consistent header height for all minimized cards */
     .card-minimized > *:first-child {
       min-height: 44px;
       display: flex !important;
       align-items: center;
+    }
+    .panel-min-btn {
+      background: none;
+      border: 1px solid #2a2235;
+      border-radius: 4px;
+      color: #4a4038;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 8px;
+      line-height: 1.2;
+      transition: all 0.2s;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .panel-min-btn:hover {
+      color: #ffd700;
+      border-color: #ffd700;
+      background: rgba(255, 215, 0, 0.05);
     }
 
     /* ── AI Chatbot ── */
@@ -1061,7 +1086,7 @@
                 <span class="week-label">Week of ${weekKey}</span>
                 <div style="font-size:10px;color:#f39c12;margin-top:3px;">${totalTimeLeft > 0 ? timeStr : 'All done!'}</div>
               </div>
-              <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+              <button class="panel-min-btn">&#8722;</button>
             </div>
           </div>
           ${renderVaultSection('dungeons','Dungeons','Heroic / M0 / M+ / Timewalking',dc,8,VAULT.dungeons,'dungeon')}
@@ -1377,7 +1402,7 @@
         <div class="advice-card" data-panel="advice">
           <div class="advice-header" style="display:flex;justify-content:space-between;align-items:center;">
             <h3><span class="panel-drag-handle">&#8942;&#8942;</span> Smart Recommendations</h3>
-            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+            <button class="panel-min-btn">&#8722;</button>
           </div>
           ${ruleBasedContent}
           ${aiSection}
@@ -1547,7 +1572,7 @@
                 <div class="bis-score">${gearPct}<span class="bis-score-pct">%</span></div>
                 <div style="font-size:9px;color:#5a5545;margin-top:2px;">ilvl ${avgCur} of ${avgBis}</div>
               </div>
-              <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+              <button class="panel-min-btn">&#8722;</button>
             </div>
           </div>
 
@@ -1727,11 +1752,11 @@
         <div class="crest-card" data-panel="crests">
           <div class="crest-header">
             <h2><span class="panel-drag-handle">&#8942;&#8942;</span> Dawncrest Tracker</h2>
-            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+            <button class="panel-min-btn">&#8722;</button>
           </div>
           <div class="crest-grid">${tiersHtml}</div>
-          <div style="padding:0 18px 4px;font-size:9px;color:#4a4038;border-top:1px solid #2a2235;padding-top:6px;">&#9733; = recommended tier for your current ilvl</div>
-          <div style="padding:12px 18px;border-top:1px solid #2a2235;">
+          <div style="padding:14px 18px;font-size:9px;color:#4a4038;border-top:1px solid #2a2235;word-wrap:break-word;">&#9733; = recommended tier for your current ilvl</div>
+          <div style="padding:14px 18px;border-top:1px solid #2a2235;word-wrap:break-word;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f39c12;margin-bottom:6px;">What to Farm Next</div>
             <div style="font-size:12px;color:#c8c0b0;line-height:1.5;">${crestReason}${farmAdvice}</div>
           </div>
@@ -1782,7 +1807,7 @@
               <h2 style="font-size:15px;font-weight:700;color:#2ecc71;font-family:'Cinzel',serif;letter-spacing:1px;"><span class="panel-drag-handle">&#8942;&#8942;</span> Bonus Farming</h2>
               <div style="font-size:11px;color:#5a5545;margin-top:2px;">After weekly tasks — what to farm for more progress</div>
             </div>
-            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+            <button class="panel-min-btn">&#8722;</button>
           </div>
           <div style="padding:14px 18px;">${farmsHtml}</div>
         </div>`;
@@ -1867,7 +1892,7 @@
             <h2 style="font-size:14px;font-weight:700;color:#2ecc71;font-family:'Cinzel',serif;letter-spacing:1px;">
               <span class="panel-drag-handle">&#8942;&#8942;</span> Consumables & Enchants
             </h2>
-            <button class="panel-min-btn" style="background:none;border:1px solid #2a2235;border-radius:4px;color:#4a4038;cursor:pointer;font-size:14px;padding:0 6px;line-height:1;">&#8722;</button>
+            <button class="panel-min-btn">&#8722;</button>
           </div>
           <div style="padding:10px 18px;border-bottom:1px solid #2a2235;">
             <div style="font-size:10px;font-weight:600;color:#ffd700;letter-spacing:0.5px;margin-bottom:6px;">Pre-Pull Checklist</div>
