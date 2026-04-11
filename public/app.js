@@ -1,3 +1,19 @@
+// ── Floating ember particles ──
+(function initParticles() {
+  const container = document.getElementById('bgParticles');
+  if (!container) return;
+  for (let i = 0; i < 15; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (10 + Math.random() * 15) + 's';
+    p.style.animationDelay = (Math.random() * 12) + 's';
+    const size = (1 + Math.random() * 2) + 'px';
+    p.style.width = p.style.height = size;
+    container.appendChild(p);
+  }
+})();
+
 const CLASS_COLORS = {
   'WARRIOR':'#C69B6D','PALADIN':'#F48CBA','HUNTER':'#AAD372','ROGUE':'#FFF468',
   'PRIEST':'#FFFFFF','DEATHKNIGHT':'#C41E3A','DEATH KNIGHT':'#C41E3A',
