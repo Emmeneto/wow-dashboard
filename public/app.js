@@ -780,10 +780,13 @@ function renderBiS() {
 
     const sourceIcon = bis.sourceType === 'raid' ? '&#9876;' : bis.sourceType === 'mythicplus' ? '&#9881;' : bis.sourceType === 'crafted' ? '&#9874;' : '&#9733;';
 
-    // Wrap item name with Wowhead tooltip link if available
-    const wowheadLink = bis.wowheadUrl
-      ? `<a href="${bis.wowheadUrl}" data-wowhead="item=${bis.bisItemID}" class="bis-slot-item ${qCSS}" style="text-decoration:none;" target="_blank">${curName}</a>`
-      : `<span class="bis-slot-item ${qCSS}">${curName}</span>`;
+    // Wrap item name with Wowhead link — use search URL if no direct URL/ID
+    const bisSearchUrl = `https://www.wowhead.com/search?q=${encodeURIComponent(bis.bisName)}`;
+    const wowheadHref = bis.wowheadUrl || bisSearchUrl;
+    const wowheadAttr = bis.bisItemID > 0 ? `data-wowhead="item=${bis.bisItemID}"` : '';
+    const wowheadLink = curName && curName !== 'Empty'
+      ? `<a href="${wowheadHref}" ${wowheadAttr} class="bis-slot-item ${qCSS}" style="text-decoration:none;" target="_blank">${curName}</a>`
+      : `<span class="bis-slot-item ${qCSS}">${curName || 'Empty'}</span>`;
 
     return `
       <div class="bis-slot ${st.cls}" data-slot="${slotId}">
@@ -894,7 +897,8 @@ function renderBisDetail() {
     ? `Your current item (${curIlvl}) is decent, but switching to the BiS item would be a +${ilvlGap} ilvl upgrade with better stats.`
     : `Major upgrade available here! You're ${ilvlGap} ilvl below BiS. Prioritize getting this piece.`;
 
-  const wowheadLink = bis.wowheadUrl ? `<a href="${bis.wowheadUrl}" target="_blank" style="color:#a335ee;text-decoration:none;font-size:11px;">View on Wowhead &#8599;</a>` : '';
+  const bisDetailSearchUrl = `https://www.wowhead.com/search?q=${encodeURIComponent(bis.bisName)}`;
+  const wowheadLink = `<a href="${bis.wowheadUrl || bisDetailSearchUrl}" target="_blank" style="color:#a335ee;text-decoration:none;font-size:11px;">View on Wowhead &#8599;</a>`;
 
   el.innerHTML = `
     <div class="bis-detail-panel">
@@ -915,9 +919,7 @@ function renderBisDetail() {
           <div class="bis-detail-arrow">&#8594;</div>
           <div class="bis-detail-item target">
             <div class="bis-detail-label">BiS TARGET</div>
-            <div class="bis-detail-name quality-epic">${bis.wowheadUrl
-              ? `<a href="${bis.wowheadUrl}" data-wowhead="item=${bis.bisItemID}" style="color:#a335ee;text-decoration:none;" target="_blank">${bis.bisName}</a>`
-              : bis.bisName}</div>
+            <div class="bis-detail-name quality-epic"><a href="${bis.wowheadUrl || bisDetailSearchUrl}" ${bis.bisItemID > 0 ? `data-wowhead="item=${bis.bisItemID}"` : ''} style="color:#a335ee;text-decoration:none;" target="_blank">${bis.bisName}</a></div>
             <div class="bis-detail-ilvl">ilvl ${bis.bisIlvl} (max)</div>
           </div>
         </div>
