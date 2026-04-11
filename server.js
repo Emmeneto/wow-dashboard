@@ -798,12 +798,58 @@ Return ONLY the JSON object, nothing else.`
     };
     saveBisData(allBis);
 
-    console.log(`BiS data generated and saved for ${specKey}`);
+    console.log(`BiS data generated for ${specKey}. Validating items...`);
+
+    // ── VALIDATION: Check each item against Wowhead ──
+    // Items must be ilvl 197+ and Epic quality to be valid endgame items
+    let validationIssues = [];
+    for (const [slotId, slot] of Object.entries(bisResult.slots || {})) {
+      if (!slot.bisItemID || slot.bisItemID === 0) continue;
+      try {
+        const wowheadRes = await fetch(`https://www.wowhead.com/item=${slot.bisItemID}?xml`, {
+          signal: AbortSignal.timeout(5000),
+        });
+        if (wowheadRes.ok) {
+          const xml = await wowheadRes.text();
+          // Check for item level in the XML response
+          const ilvlMatch = xml.match(/level>(\d+)</);
+          const qualityMatch = xml.match(/quality id="(\d+)"/);
+          const ilvl = ilvlMatch ? parseInt(ilvlMatch[1]) : 0;
+          const quality = qualityMatch ? parseInt(qualityMatch[1]) : 0;
+
+          if (ilvl < 100) {
+            validationIssues.push(`FAIL: ${slot.slotName} "${slot.bisName}" (${slot.bisItemID}) is ilvl ${ilvl} — leveling item, not endgame`);
+            // Mark as unverified so the dashboard knows
+            slot._verified = false;
+            slot._validationNote = `ilvl ${ilvl} — may be a leveling item. Verify on Wowhead.`;
+          } else {
+            slot._verified = true;
+          }
+
+          if (quality < 4 && ilvl > 0) {
+            validationIssues.push(`WARN: ${slot.slotName} "${slot.bisName}" (${slot.bisItemID}) quality ${quality} — not Epic`);
+          }
+        }
+      } catch (e) {
+        // Wowhead fetch failed — skip validation for this item
+        slot._verified = null; // unknown
+      }
+    }
+
+    if (validationIssues.length > 0) {
+      console.warn(`BiS validation issues for ${specKey}:`, validationIssues);
+      bisResult._validationIssues = validationIssues;
+      bisResult._validationStatus = "partial";
+    } else {
+      bisResult._validationStatus = "passed";
+    }
+
     markGenerated(specKey);
     logConversation({
       type: "bis-generation",
       spec: specKey,
       slotsGenerated: Object.keys(bisResult.slots || {}).length,
+      validationIssues: validationIssues.length,
     });
 
     return bisResult;

@@ -787,6 +787,9 @@ function renderBiS() {
     const wowheadLink = curName && curName !== 'Empty'
       ? `<a href="${wowheadHref}" ${wowheadAttr} class="bis-slot-item ${qCSS}" style="text-decoration:none;" target="_blank">${curName}</a>`
       : `<span class="bis-slot-item ${qCSS}">${curName || 'Empty'}</span>`;
+    const unverifiedBadge = bis._verified === false
+      ? '<span style="font-size:7px;color:#e74c3c;background:rgba(231,76,60,0.1);padding:1px 4px;border-radius:2px;margin-left:4px;">UNVERIFIED</span>'
+      : '';
 
     return `
       <div class="bis-slot ${st.cls}" data-slot="${slotId}">
@@ -797,7 +800,7 @@ function renderBiS() {
         </div>
         <div class="bis-slot-right">
           <div style="display:flex;gap:3px;">
-            ${bisBadge}${tierBadge}
+            ${bisBadge}${tierBadge}${unverifiedBadge}
           </div>
           ${statusBadge}
         </div>
