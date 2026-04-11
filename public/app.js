@@ -2,12 +2,12 @@
 (function initParticles() {
   const container = document.getElementById('bgParticles');
   if (!container) return;
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 20; i++) {
     const p = document.createElement('div');
     p.className = 'particle';
     p.style.left = Math.random() * 100 + '%';
-    p.style.animationDuration = (10 + Math.random() * 15) + 's';
-    p.style.animationDelay = (Math.random() * 12) + 's';
+    p.style.animationDuration = (8 + Math.random() * 12) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
     const size = (1 + Math.random() * 2) + 'px';
     p.style.width = p.style.height = size;
     container.appendChild(p);

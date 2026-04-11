@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WoW Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #080810;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; overflow: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(163,53,238,0.06) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(255,215,0,0.04) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
+    }
+    .splash {
+      position: relative; z-index: 1; text-align: center;
+      animation: fadeIn 0.8s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .splash img { width: 120px; height: 120px; margin-bottom: 20px; }
+    .splash h1 {
+      font-family: 'Cinzel Decorative', serif; color: #ffd700; font-size: 28px;
+      text-shadow: 0 0 20px rgba(255,215,0,0.3); letter-spacing: 2px;
+    }
+    .splash p { color: #5a5545; font-size: 12px; margin-top: 10px; letter-spacing: 1px; }
+    .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+    .particle {
+      position: absolute; width: 2px; height: 2px;
+      background: rgba(255,215,0,0.6); border-radius: 50%;
+      box-shadow: 0 0 4px rgba(255,215,0,0.3);
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="particles" id="particles"></div>
+  <div class="splash">
+    <img src="/logo.svg" alt="WoW Dashboard">
+    <h1>WoW Dashboard</h1>
+    <p>Loading your gearing companion...</p>
+  </div>
+  <script>
+    // Particles
+    const c = document.getElementById('particles');
+    for (let i = 0; i < 15; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (8 + Math.random() * 12) + 's';
+      p.style.animationDelay = (Math.random() * 8) + 's';
+      p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+      c.appendChild(p);
+    }
+    // Redirect after 2.5 seconds
+    setTimeout(() => { window.location.href = '/'; }, 2500);
+  </script>
+</body>
+</html>
