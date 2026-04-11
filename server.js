@@ -777,9 +777,12 @@ Return ONLY valid JSON with no markdown, no code blocks, no explanation. The JSO
 
 Context: Midnight Season 1 raids are The Voidspire (6 bosses), Dreamrift (1 boss: Chimaerus), March on Quel'Danas (2 bosses). M+ pool includes Windrunner Spire, Murder Row, Den of Nalorakk, Maisara Caverns, Seat of the Triumvirate, Skyreach, Magister's Terrace, Pit of Saron. Max ilvl is 282 (Myth 6/6 raid) or 272 (M+ vault / crafted). Tier tokens are from Voidspire + Dreamrift + Quel'Danas.
 
+CRITICAL: ALL items MUST be from World of Warcraft: Midnight (patch 12.0, 2026) ONLY.
+DO NOT use items from Classic, TBC, Wrath, Cata, MoP, WoD, Legion, BfA, Shadowlands, Dragonflight, or The War Within.
+If you are unsure about an item, say "UNKNOWN" in the bisName field rather than guessing from an old expansion.
 sourceType must be one of: "raid", "mythicplus", "crafted", "dungeon", "none".
-Set bisItemID to 0 (we don't have IDs).
-Fill in real item names, sources, and reasoning for ${specName} ${classNameCap}.
+Set bisItemID to 0 (we don't have IDs — we validate separately).
+Fill in real Midnight Season 1 item names, sources, and reasoning for ${specName} ${classNameCap}.
 Return ONLY the JSON object, nothing else.`
       }],
     });
@@ -967,7 +970,11 @@ Return ONLY valid JSON, no markdown, no code blocks:
   }
 }
 
-Context: WoW Midnight Season 1 (patch 12.0, April 2026). Thalassian-themed consumables, Eversong gems. Return ONLY the JSON.`
+CRITICAL: This MUST be World of Warcraft: Midnight Season 1 (patch 12.0, April 2026) ONLY.
+DO NOT use items from Classic, TBC, Wrath, Cata, MoP, WoD, Legion, BfA, Shadowlands, Dragonflight, or The War Within.
+Midnight consumables include: Flask of the Magisters, Light's Potential, Thalassian Phoenix Oil, Void-Touched Augment Rune, Champion's Bento, Eversong gems, Ren'dorei/Zul'jin/Worldsoul enchants.
+If you don't know the Midnight-specific item, say "UNKNOWN" rather than guessing from old expansions.
+Return ONLY the JSON.`
       }],
     });
 

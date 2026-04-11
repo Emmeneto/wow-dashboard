@@ -251,16 +251,20 @@ h1 {
   padding: 14px 18px;
   border-bottom: 1px solid #2a2235;
   display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   background: linear-gradient(180deg, rgba(255,215,0,0.03) 0%, transparent 100%);
 }
 .tracker-header h2 {
   font-size: 15px; font-weight: 700; color: #ffd700;
   font-family: 'Cinzel', serif; letter-spacing: 1px;
+  white-space: nowrap;
 }
 .tracker-header .week-label {
   font-size: 10px; color: #5a5545;
   background: #1a1528; padding: 3px 10px;
   border-radius: 4px; border: 1px solid #2a2235;
+  white-space: nowrap;
 }
 
 .vault-section { padding: 14px 18px; border-bottom: 1px solid #2a2235; }
@@ -428,9 +432,9 @@ h1 {
 .bis-slot.is-upgrade { border-color: rgba(231,76,60,0.2); }
 
 .bis-slot-left { flex: 1; min-width: 0; }
-.bis-slot-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.bis-slot-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; max-width: 80px; }
 .bis-slot-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #4a4038; font-weight: 600; }
-.bis-slot-item { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bis-slot-item { font-size: 11px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
 .bis-slot-ilvl { font-size: 10px; color: #5a5545; margin-top: 1px; }
 .bis-arrow { color: #3a3530; }
 .bis-target { color: #a335ee; font-weight: 600; }

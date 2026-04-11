@@ -1,0 +1,37 @@
+{
+  "frost-mage": {
+    "specName": "Frost Mage",
+    "enchants": {
+      "weapon": {"name": "Acuity of the Ren'dorei", "stat": "Intellect proc on spell cast"},
+      "head": {"name": "Empowered Rune of Avoidance", "stat": "Avoidance + minor stat boost"},
+      "chest": {"name": "Mark of the Worldsoul", "stat": "+Intellect"},
+      "legs": {"name": "Sunfire Silk Spellthread", "stat": "+Intellect, +Stamina"},
+      "boots": {"name": "Lynx's Dexterity", "stat": "+Speed"},
+      "wrist": {"name": "Devotion of Speed", "stat": "+Speed"},
+      "ring1": {"name": "Zul'jin's Mastery", "stat": "+Mastery"},
+      "ring2": {"name": "Zul'jin's Mastery", "stat": "+Mastery"},
+      "cloak": {"name": "Chant of Winged Grace", "stat": "+Avoidance"}
+    },
+    "gems": {
+      "primary": {"name": "Powerful Eversong Diamond", "stat": "+Intellect (Thalassian Diamond)"},
+      "secondary": [
+        {"name": "Eversong Amethyst", "stat": "+Mastery/Crit mix"},
+        {"name": "Eversong Garnet", "stat": "+Haste/Crit mix"},
+        {"name": "Eversong Peridot", "stat": "+Mastery/Haste mix"},
+        {"name": "Eversong Lapis", "stat": "+Versatility mix"}
+      ],
+      "note": "Must use at least 1 of each secondary color (Amethyst, Garnet, Peridot, Lapis) to activate the Thalassian Diamond primary gem."
+    },
+    "consumables": {
+      "flask": {"name": "Flask of the Magisters", "stat": "+165 Mastery for 1 hour", "duration": "1 hour"},
+      "potion": {"name": "Light's Potential", "stat": "+593 Intellect for 30 seconds", "usage": "Pre-pot 1 sec before pull, second during burst/Icy Veins window"},
+      "healthPotion": {"name": "Silvermoon Health Potion"},
+      "food": {"name": "Champion's Bento", "stat": "+65 highest secondary stat for 1 hour"},
+      "augmentRune": {"name": "Void-Touched Augment Rune", "stat": "+25 Intellect for 1 hour. LOST ON DEATH — re-apply after wipes."},
+      "weaponBuff": {"name": "Thalassian Phoenix Oil", "stat": "+13 Crit, +13 Haste for 2 hours"},
+      "tea": {"name": "Argentleaf Tea", "stat": "+Speed buff", "note": "Stacks with food OUTDOORS ONLY. Does NOT work in raids/dungeons (hotfixed)."}
+    },
+    "_source": "Icy Veins + Wowhead + Method (verified Midnight Season 1, April 2026)",
+    "_verifiedAt": "2026-04-12"
+  }
+}
